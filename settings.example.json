@@ -1,0 +1,46 @@
+{
+    "openai": {
+        "api_key": "",
+        "base_url": "https://api.openai.com"
+    },
+    "anthropic": {
+        "api_key": "",
+        "base_url": "https://api.anthropic.com"
+    },
+    "azure_openai": {
+        "api_key": "",
+        "base_url": "https://your-resource.openai.azure.com/openai"
+    },
+    "gemini": {
+        "api_key": "",
+        "base_url": "https://generativelanguage.googleapis.com"
+    },
+    "deepseek": {
+        "api_key": "",
+        "base_url": "https://api.deepseek.com"
+    },
+    "qwen": {
+        "api_key": "",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode"
+    },
+    "glm": {
+        "api_key": "",
+        "base_url": "https://open.bigmodel.cn/api/paas"
+    },
+    "moonshot": {
+        "api_key": "",
+        "base_url": "https://api.moonshot.cn"
+    },
+    "doubao": {
+        "api_key": "",
+        "base_url": "https://ark.cn-beijing.volces.com/api"
+    },
+    "admin_key": "admin123",
+    "model_mapping": {
+        "claude-4.5-opus": "claude-opus-4-5-20251101",
+        "claude-4.5-sonnet": "claude-sonnet-4-5-20250929",
+        "claude-4-sonnet": "claude-sonnet-4-20250514",
+        "claude-3-5-sonnet": "claude-3-5-sonnet-20241022",
+        "claude-3-opus": "claude-3-opus-20240229"
+    }
+}

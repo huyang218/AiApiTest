@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}多模型对比 - EchoMind AI API 检测平台{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> 多模型横向对比</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" onclick="addCompareRow()">
+                    <i class="bi bi-plus-lg"></i> 添加API
+                </button>
+            </div>
+        </div>
+
+        <!-- 配置区 -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <p class="text-secondary small mb-3">填入多个API配置，使用相同提示词发送请求，对比响应质量与速度</p>
+                <div id="compareConfigs">
+                    <div class="compare-row mb-2 p-2 rounded" style="background: var(--bg-input);">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-primary">A</span>
+                            <input class="form-control form-control-sm" placeholder="名称（例如：AI-in-one）" data-field="name"
+                                style="max-width: 200px;">
+                            <button class="btn btn-sm text-danger p-0 ms-auto"
+                                onclick="this.closest('.compare-row').remove()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <input class="form-control form-control-sm" placeholder="Base URL"
+                                    data-field="base_url">
+                            </div>
+                            <div class="col-md-4">
+                                <input class="form-control form-control-sm" placeholder="API Key" data-field="api_key"
+                                    type="password">
+                            </div>
+                            <div class="col-md-3">
+                                <input class="form-control form-control-sm" placeholder="模型名" data-field="model">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="compare-row mb-2 p-2 rounded" style="background: var(--bg-input);">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-success">B</span>
+                            <input class="form-control form-control-sm" placeholder="名称（例如：Anthropic）" data-field="name"
+                                style="max-width: 200px;">
+                            <button class="btn btn-sm text-danger p-0 ms-auto"
+                                onclick="this.closest('.compare-row').remove()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <input class="form-control form-control-sm" placeholder="Base URL"
+                                    data-field="base_url">
+                            </div>
+                            <div class="col-md-4">
+                                <input class="form-control form-control-sm" placeholder="API Key" data-field="api_key"
+                                    type="password">
+                            </div>
+                            <div class="col-md-3">
+                                <input class="form-control form-control-sm" placeholder="模型名" data-field="model">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 预设提示词 -->
+                <div class="mt-3 mb-2">
+                    <label class="form-label small mb-1 fw-bold">测试场景</label>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <button class="btn btn-outline-primary btn-sm py-1 px-2 prompt-preset active"
+                            onclick="selectPreset(this, 0)" style="font-size:0.75rem;">
+                            <i class="bi bi-chat-text"></i> 综合分析
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm py-1 px-2 prompt-preset"
+                            onclick="selectPreset(this, 1)" style="font-size:0.75rem;">
+                            <i class="bi bi-code-slash"></i> 代码生成
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm py-1 px-2 prompt-preset"
+                            onclick="selectPreset(this, 2)" style="font-size:0.75rem;">
+                            <i class="bi bi-translate"></i> 翻译能力
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm py-1 px-2 prompt-preset"
+                            onclick="selectPreset(this, 3)" style="font-size:0.75rem;">
+                            <i class="bi bi-lightbulb"></i> 逻辑推理
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm py-1 px-2 prompt-preset"
+                            onclick="selectPreset(this, 4)" style="font-size:0.75rem;">
+                            <i class="bi bi-pencil-square"></i> 创意写作
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm py-1 px-2 prompt-preset"
+                            onclick="selectPreset(this, -1)" style="font-size:0.75rem;">
+                            <i class="bi bi-cursor-text"></i> 自定义
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <textarea class="form-control form-control-sm" id="comparePrompt" rows="3"
+                        style="font-size:0.85rem;"></textarea>
+                </div>
+
+                <button class="btn btn-primary w-100" onclick="runCompare()" id="compareBtn">
+                    <i class="bi bi-play-fill"></i> 开始对比
+                </button>
+            </div>
+        </div>
+
+        <!-- 结果区 -->
+        <div id="compareResult" style="display:none;">
+            <!-- 速度概览 -->
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <i class="bi bi-bar-chart"></i> 速度对比
+                </div>
+                <div class="card-body py-3" id="speedOverview">
+                </div>
+            </div>
+
+            <!-- 详细对比表 -->
+            <div class="card mb-3">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-table"></i> 详细指标</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0">
+                            <thead id="compareHeader"></thead>
+                            <tbody id="compareBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 回答内容 -->
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <i class="bi bi-chat-left-text"></i> 回答内容对比
+                </div>
+                <div class="card-body py-2" id="responseContent">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const presets = [
+        {
+            name: '综合分析',
+            prompt: '请从技术可行性、市场前景、潜在风险三个维度，分析"AI Agent自主完成软件开发"这一趋势。要求：每个维度给出2-3个论点，总字数控制在300-500字，结尾给出你的综合判断。'
+        },
+        {
+            name: '代码生成',
+            prompt: '用Python实现一个LRU缓存类，要求：\n1. 支持 get(key) 和 put(key, value) 操作，时间复杂度O(1)\n2. 超过容量时淘汰最久未使用的条目\n3. 包含完整的类型注解和docstring\n4. 附带3个测试用例'
+        },
+        {
+            name: '翻译能力',
+            prompt: '请将以下中文翻译成地道的英文，要求保持原文的语气和修辞手法：\n\n"技术本身是中性的，但使用技术的人却不是。当我们把越来越多的决策交给算法时，我们实际上是在用确定性的逻辑去处理不确定性的世界。这不是进步与保守的对立，而是效率与温度的博弈。每一个被自动化取代的岗位背后，都站着一个需要重新定义自己价值的人。"'
+        },
+        {
+            name: '逻辑推理',
+            prompt: '一个房间里有三个开关，分别对应隔壁房间的三盏灯。你只能进入隔壁房间一次。请问如何确定每个开关对应哪盏灯？\n\n请给出：\n1. 完整的解题思路\n2. 详细的操作步骤\n3. 背后的逻辑原理\n4. 如果有4个开关4盏灯，方案如何扩展？'
+        },
+        {
+            name: '创意写作',
+            prompt: '以"最后一个程序员关掉了显示器"为开头，写一篇300字左右的微型科幻小说。要求：\n1. 包含一个出人意料的反转\n2. 融入对AI与人类关系的思考\n3. 文笔优美，有画面感'
+        }
+    ];
+
+    // 初始化
+    document.getElementById('comparePrompt').value = presets[0].prompt;
+
+    function selectPreset(btn, idx) {
+        document.querySelectorAll('.prompt-preset').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (idx >= 0) {
+            document.getElementById('comparePrompt').value = presets[idx].prompt;
+            document.getElementById('comparePrompt').readOnly = false;
+        } else {
+            document.getElementById('comparePrompt').value = '';
+            document.getElementById('comparePrompt').readOnly = false;
+            document.getElementById('comparePrompt').focus();
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function addCompareRow() {
+        const container = document.getElementById('compareConfigs');
+        if (container.children.length >= 5) { alert('最多5个'); return; }
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        const colors = ['primary', 'success', 'warning', 'danger', 'info'];
+        const idx = container.children.length;
+        const row = document.createElement('div');
+        row.className = 'compare-row mb-2 p-2 rounded';
+        row.style.background = 'var(--bg-input)';
+        row.innerHTML = `
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-${colors[idx] || 'secondary'}">${labels[idx] || idx + 1}</span>
+                <input class="form-control form-control-sm" placeholder="名称" data-field="name" style="max-width: 200px;">
+                <button class="btn btn-sm text-danger p-0 ms-auto" onclick="this.closest('.compare-row').remove()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="row g-2">
+                <div class="col-md-5"><input class="form-control form-control-sm" placeholder="Base URL" data-field="base_url"></div>
+                <div class="col-md-4"><input class="form-control form-control-sm" placeholder="API Key" data-field="api_key" type="password"></div>
+                <div class="col-md-3"><input class="form-control form-control-sm" placeholder="模型名" data-field="model"></div>
+            </div>`;
+        container.appendChild(row);
+    }
+
+    function renderSpeedBars(results) {
+        const container = document.getElementById('speedOverview');
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
+
+        const maxLatency = Math.max(...results.map(r => r.latency_ms || 0));
+        const maxSpeed = Math.max(...results.map(r => r.output_speed || 0));
+
+        let html = '<div class="row g-3">';
+
+        // 响应延迟对比
+        html += '<div class="col-md-6">';
+        html += '<h6 class="small text-secondary mb-2"><i class="bi bi-clock"></i> 响应延迟 <span class="text-muted">(越短越好)</span></h6>';
+        results.forEach((r, i) => {
+            const pct = maxLatency > 0 ? (r.latency_ms / maxLatency * 100) : 0;
+            const isFastest = r.latency_ms === Math.min(...results.filter(x => x.success).map(x => x.latency_ms));
+            html += `<div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge" style="background:${colors[i]};min-width:22px;">${labels[i]}</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="fw-bold">${escapeHtml(r.name || labels[i])}</small>
+                        <small class="fw-bold ${isFastest && r.success ? 'text-success' : ''}">${r.success ? (r.latency_ms / 1000).toFixed(2) + 's' : '失败'}${isFastest && r.success ? ' 🏆' : ''}</small>
+                    </div>
+                    <div class="progress" style="height:8px;border-radius:4px;">
+                        <div class="progress-bar" style="width:${pct}%;background:${colors[i]};border-radius:4px;transition:width 0.8s ease;"></div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+
+        // 输出速度对比
+        html += '<div class="col-md-6">';
+        html += '<h6 class="small text-secondary mb-2"><i class="bi bi-speedometer2"></i> 输出速度 <span class="text-muted">(越高越好)</span></h6>';
+        results.forEach((r, i) => {
+            const pct = maxSpeed > 0 ? ((r.output_speed || 0) / maxSpeed * 100) : 0;
+            const isFastest = r.output_speed === Math.max(...results.filter(x => x.success).map(x => x.output_speed || 0));
+            html += `<div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge" style="background:${colors[i]};min-width:22px;">${labels[i]}</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="fw-bold">${escapeHtml(r.name || labels[i])}</small>
+                        <small class="fw-bold ${isFastest && r.success ? 'text-success' : ''}">${r.success ? (r.output_speed || 0) + ' tok/s' : '失败'}${isFastest && r.success ? ' 🏆' : ''}</small>
+                    </div>
+                    <div class="progress" style="height:8px;border-radius:4px;">
+                        <div class="progress-bar" style="width:${pct}%;background:${colors[i]};border-radius:4px;transition:width 0.8s ease;"></div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += '</div></div>';
+
+        container.innerHTML = html;
+    }
+
+    function renderResponses(results) {
+        const container = document.getElementById('responseContent');
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        const colors = ['primary', 'success', 'warning', 'danger', 'info'];
+
+        let html = '<div class="row g-2">';
+        results.forEach((r, i) => {
+            html += `<div class="col-md-${results.length <= 2 ? 6 : (results.length <= 3 ? 4 : 6)}">
+                <div class="border rounded p-2" style="background:var(--bg-input);">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-${colors[i]}">${labels[i]}</span>
+                        <strong class="small">${escapeHtml(r.name || labels[i])}</strong>
+                        <span class="badge bg-secondary ms-auto" style="font-size:0.65rem;">${r.content_length || 0}字</span>
+                    </div>
+                    <div class="small" style="max-height:300px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;color:var(--text-primary);">${r.success ? escapeHtml(r.response) : '<span class="text-danger">' + escapeHtml(r.error || '请求失败') + '</span>'}</div>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    async function runCompare() {
+        const rows = document.querySelectorAll('.compare-row');
+        const configs = [];
+        rows.forEach(row => {
+            const name = row.querySelector('[data-field="name"]').value;
+            const base_url = row.querySelector('[data-field="base_url"]').value;
+            const api_key = row.querySelector('[data-field="api_key"]').value;
+            const model = row.querySelector('[data-field="model"]').value;
+            if (base_url && api_key) {
+                configs.push({ name: name || 'API-' + (configs.length + 1), base_url, api_key, model, api_format: 'openai' });
+            }
+        });
+
+        if (configs.length < 2) { alert('至少填入2个有效配置'); return; }
+
+        const prompt = document.getElementById('comparePrompt').value || '请简要介绍自己';
+        const btn = document.getElementById('compareBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 对比中... 请等待所有模型响应';
+
+        try {
+            const response = await fetch('/api/test/compare', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ configs, prompt })
+            });
+            const result = await response.json();
+
+            if (result.error) {
+                alert('对比失败: ' + result.error);
+                return;
+            }
+
+            document.getElementById('compareResult').style.display = 'block';
+
+            // 渲染速度柱状图
+            renderSpeedBars(result.results);
+
+            // 渲染详细指标表
+            const header = document.getElementById('compareHeader');
+            const body = document.getElementById('compareBody');
+
+            header.innerHTML = '<tr><th style="min-width:100px;">指标</th>' + result.results.map((r, i) =>
+                `<th><span class="badge bg-${['primary', 'success', 'warning', 'danger', 'info'][i] || 'secondary'} me-1">${['A', 'B', 'C', 'D', 'E'][i]}</span>${escapeHtml(r.name)}</th>`
+            ).join('') + '</tr>';
+
+            const metrics = [
+                { label: '🤖 请求模型', key: r => `<code>${escapeHtml(r.model) || '-'}</code>` },
+                { label: '✅ 状态', key: r => r.success ? '<span class="text-success fw-bold">✓ 成功</span>' : '<span class="text-danger fw-bold">✗ 失败</span>' },
+                { label: '⏱️ 响应延迟', key: r => r.success ? `<strong>${(r.latency_ms / 1000).toFixed(2)}s</strong>` : '-' },
+                { label: '🚀 输出速度', key: r => r.success ? `<strong>${r.output_speed || 0}</strong> tok/s` : '-' },
+                { label: '📊 响应模型', key: r => r.response_model ? `<code>${escapeHtml(r.response_model)}</code>` : '-' },
+                { label: '📥 输入Token', key: r => r.input_tokens || '-' },
+                { label: '📤 输出Token', key: r => r.output_tokens || '-' },
+                { label: '📝 回答长度', key: r => r.content_length ? r.content_length + '字' : '-' },
+            ];
+
+            body.innerHTML = metrics.map(m =>
+                '<tr><td class="text-secondary fw-bold text-nowrap">' + m.label + '</td>' +
+                result.results.map(r => '<td>' + m.key(r) + '</td>').join('') + '</tr>'
+            ).join('');
+
+            // 渲染回答内容
+            renderResponses(result.results);
+
+            // 滚动到结果区
+            document.getElementById('compareResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        } catch (e) {
+            alert('请求失败: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> 开始对比';
+        }
+    }
+</script>
+{% endblock %}

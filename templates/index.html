@@ -1,0 +1,2394 @@
+{% extends "base.html" %}
+
+{% block title %}测试 - EchoMind AI API 检测平台{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- API 配置卡片 - 在移动端顶部显示 -->
+    <div class="col-12 col-lg-4 order-1 order-lg-1 mb-3 mb-lg-0">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-gear"></i> API 配置
+            </div>
+            <div class="card-body">
+                <form id="configForm">
+                    <div class="mb-2 mb-md-3">
+                        <label class="form-label">服务商名称</label>
+                        <input type="text" class="form-control" name="name" placeholder="例如: AI-in-one" required>
+                    </div>
+
+                    <div class="mb-2 mb-md-3">
+                        <label class="form-label">API Base URL</label>
+                        <input type="url" class="form-control" name="base_url" placeholder="https://api.example.com"
+                            required>
+                    </div>
+
+                    <div class="mb-2 mb-md-3">
+                        <label class="form-label">API Key</label>
+                        <input type="password" class="form-control" name="api_key" placeholder="sk-..." required>
+                    </div>
+
+                    <div class="mb-2 mb-md-3">
+                        <label class="form-label">模型厂商</label>
+                        <div class="mb-1">
+                            <small class="text-secondary" style="font-size: 0.7rem;">海外模型</small>
+                        </div>
+                        <div class="btn-group w-100 mb-1" role="group">
+                            <input type="radio" class="btn-check" name="model_provider" id="providerClaude"
+                                value="claude" checked onchange="onProviderChange()">
+                            <label class="btn btn-outline-primary btn-sm" for="providerClaude">Claude</label>
+
+                            <input type="radio" class="btn-check" name="model_provider" id="providerGPT" value="gpt"
+                                onchange="onProviderChange()">
+                            <label class="btn btn-outline-success btn-sm" for="providerGPT">GPT</label>
+
+                            <input type="radio" class="btn-check" name="model_provider" id="providerGemini"
+                                value="gemini" onchange="onProviderChange()">
+                            <label class="btn btn-outline-info btn-sm" for="providerGemini">Gemini</label>
+                        </div>
+                        <div class="mb-1">
+                            <small class="text-secondary" style="font-size: 0.7rem;">国产模型</small>
+                        </div>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="model_provider" id="providerDeepseek"
+                                value="deepseek" onchange="onProviderChange()">
+                            <label class="btn btn-outline-primary btn-sm" for="providerDeepseek"
+                                style="border-color: #4d6bfe; color: #4d6bfe;">DeepSeek</label>
+
+                            <input type="radio" class="btn-check" name="model_provider" id="providerQwen" value="qwen"
+                                onchange="onProviderChange()">
+                            <label class="btn btn-outline-primary btn-sm" for="providerQwen"
+                                style="border-color: #6f42c1; color: #6f42c1;">通义千问</label>
+
+                            <input type="radio" class="btn-check" name="model_provider" id="providerGlm" value="glm"
+                                onchange="onProviderChange()">
+                            <label class="btn btn-outline-primary btn-sm" for="providerGlm"
+                                style="border-color: #1a73e8; color: #1a73e8;">智谱</label>
+                        </div>
+                        <div class="btn-group w-100 mt-1" role="group">
+                            <input type="radio" class="btn-check" name="model_provider" id="providerMoonshot"
+                                value="moonshot" onchange="onProviderChange()">
+                            <label class="btn btn-outline-primary btn-sm" for="providerMoonshot"
+                                style="border-color: #1a1a2e; color: #1a1a2e;">月之暗面</label>
+
+                            <input type="radio" class="btn-check" name="model_provider" id="providerDoubao"
+                                value="doubao" onchange="onProviderChange()">
+                            <label class="btn btn-outline-primary btn-sm" for="providerDoubao"
+                                style="border-color: #ff6600; color: #ff6600;">豆包</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-2 mb-md-3">
+                        <label class="form-label">模型名称</label>
+                        <input type="text" class="form-control" name="model" id="modelInput"
+                            placeholder="例如: claude-sonnet-4-5-20250929" value="claude-sonnet-4-5-20250929">
+                    </div>
+
+                    <div class="mb-2 mb-md-3">
+                        <label class="form-label">API 格式</label>
+                        <select class="form-select" name="api_format" id="apiFormat"
+                            onchange="updateOfficialKeyStatus()">
+                            <option value="anthropic">Anthropic</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="azure_openai">Azure OpenAI</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="deepseek">DeepSeek (OpenAI兼容)</option>
+                            <option value="qwen">通义千问 (OpenAI兼容)</option>
+                            <option value="glm">智谱GLM (OpenAI兼容)</option>
+                            <option value="moonshot">Moonshot (OpenAI兼容)</option>
+                            <option value="doubao">豆包 (OpenAI兼容)</option>
+                        </select>
+                    </div>
+
+                    <hr class="my-2 my-md-3">
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-primary flex-fill btn-sm"
+                            onclick="fillDemo('ai-in-one')">
+                            AI-in-one
+                        </button>
+                        <button type="button" class="btn btn-outline-primary flex-fill btn-sm"
+                            onclick="fillDemo('anthropic')">
+                            Anthropic
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap mt-1">
+                        <button type="button" class="btn btn-outline-secondary flex-fill btn-sm"
+                            onclick="fillDemo('deepseek')" style="font-size: 0.7rem;">
+                            DeepSeek
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary flex-fill btn-sm"
+                            onclick="fillDemo('qwen')" style="font-size: 0.7rem;">
+                            通义千问
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary flex-fill btn-sm"
+                            onclick="fillDemo('glm')" style="font-size: 0.7rem;">
+                            智谱
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 测试模块 - 在移动端下方显示 -->
+    <div class="col-12 col-lg-8 order-2 order-lg-2">
+        <!-- Tab 导航 -->
+        <ul class="nav nav-tabs mb-3" id="testTabs" role="tablist"
+            style="border-bottom: 2px solid var(--primary-color, #667eea);">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-verify" data-bs-toggle="tab" data-bs-target="#pane-verify"
+                    type="button" role="tab">
+                    <i class="bi bi-shield-check"></i> <span class="d-none d-sm-inline">模型真实性</span><span
+                        class="d-sm-none">真实性</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-perf" data-bs-toggle="tab" data-bs-target="#pane-perf" type="button"
+                    role="tab">
+                    <i class="bi bi-speedometer2"></i> <span class="d-none d-sm-inline">性能测试</span><span
+                        class="d-sm-none">性能</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="testTabContent">
+            <!-- ========== Tab 1: 模型真实性 ========== -->
+            <div class="tab-pane fade show active" id="pane-verify" role="tabpanel">
+                <div class="card test-module" id="verifyModule">
+                    <div class="card-header">
+                        <i class="bi bi-shield-check"></i> 模型真假检测
+                    </div>
+                    <div class="card-body">
+                        <p class="text-secondary small mb-2">一键检测平台是否如实提供所标注的模型</p>
+                        <div class="alert alert-light small py-2 px-3 mb-2" id="officialKeyStatus"
+                            style="border:1px solid #eee;">
+                            <i class="bi bi-info-circle"></i> 检查配置...
+                        </div>
+                        <div class="row align-items-center mb-2">
+                            <div class="col">
+                                <div class="small text-secondary">
+                                    <i class="bi bi-check2-circle text-primary"></i>
+                                    <strong>阶段一</strong>：模型真实性验证（8道题对比原厂）
+                                    &nbsp;&nbsp;
+                                    <i class="bi bi-check2-circle text-primary"></i>
+                                    <strong>阶段二</strong>：诚实性检测（身份伪装/提示词泄露）
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <a href="/settings" class="btn btn-outline-secondary btn-sm d-none d-md-inline-block">
+                                    <i class="bi bi-gear"></i> 配置原厂Key
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 col-md-4 mb-3 mb-md-0">
+                                <button class="btn btn-primary w-100" onclick="runFullVerify()" id="verifyBtn">
+                                    <i class="bi bi-play-fill"></i> 开始验证
+                                </button>
+                            </div>
+                            <div class="col-12 col-md-8" id="verifyResultPanel" style="display:none;">
+                                <!-- 阶段一：真实性验证 -->
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">阶段一</span>
+                                    <strong class="small"> 模型真实性验证</strong>
+                                </div>
+                                <!-- 实时进度显示 -->
+                                <div id="streamProgress" class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small text-secondary" id="streamStatusText">准备中...</span>
+                                        <span class="small text-primary" id="streamProgressText">0/8</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" id="streamProgressBar" style="width: 0%">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 实时结果列表 -->
+                                <div id="streamResults" class="mb-3" style="max-height: 200px; overflow-y: auto;">
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-4 text-center">
+                                        <div class="p-3 rounded" style="background: var(--bg-input);">
+                                            <div id="verifyStatus" class="badge fs-6 mb-1">-</div>
+                                            <div class="small text-secondary">判定结果</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <div class="p-3 rounded" style="background: var(--bg-input);">
+                                            <div id="verifySimilarity" class="fw-bold text-primary fs-5">-</div>
+                                            <div class="small text-secondary">响应相似度</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <div class="p-3 rounded" style="background: var(--bg-input);">
+                                            <div id="verifyModelMatch" class="fw-bold fs-5">-</div>
+                                            <div class="small text-secondary">模型匹配</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 存疑原因 -->
+                                <div id="verifyReasons" class="alert alert-warning small mb-3" style="display:none;">
+                                    <strong><i class="bi bi-exclamation-triangle"></i> 存疑原因:</strong>
+                                    <ul class="mb-0 mt-1" id="reasonList"></ul>
+                                </div>
+
+                                <!-- AI 智能分析按钮 -->
+                                <div id="aiAnalyzePanel" class="alert alert-info small mb-3" style="display:none;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-robot"></i>
+                                            <strong>AI 智能分析</strong>
+                                            <span class="text-secondary">- 让大模型分析是否套壳</span>
+                                        </div>
+                                        <button class="btn btn-sm btn-primary" onclick="runAiAnalyze()"
+                                            id="aiAnalyzeBtn">
+                                            <i class="bi bi-cpu"></i> 开始分析
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- AI 分析结果 -->
+                                <div id="aiAnalyzeResult" class="alert alert-secondary small mb-3"
+                                    style="display:none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <strong><i class="bi bi-cpu"></i> AI 分析结论</strong>
+                                        <span id="aiConfidence" class="badge bg-primary">-</span>
+                                    </div>
+                                    <div id="aiAnalysisContent" class="mb-2"></div>
+                                    <div id="aiKeyFindings"></div>
+                                    <div id="deepTestPanel" class="mt-2" style="display:none;">
+                                        <hr>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span><i class="bi bi-search"></i> 怀疑套壳？进行深度测试推测真实模型</span>
+                                            <button class="btn btn-sm btn-warning" onclick="runDeepAnalyze()"
+                                                id="deepAnalyzeBtn">
+                                                <i class="bi bi-zoom-in"></i> 深度测试
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 深度测试结果 -->
+                                <div id="deepAnalyzeResult" class="alert alert-dark small mb-3" style="display:none;">
+                                    <strong><i class="bi bi-bullseye"></i> 深度测试结论</strong>
+                                    <div id="deepAnalysisContent" class="mt-2"></div>
+                                </div>
+
+                                <!-- 响应对比 -->
+                                <div class="small">
+                                    <strong>响应对比:</strong>
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th width="25%">问题</th>
+                                                    <th width="37%">待测API响应</th>
+                                                    <th width="38%">原厂API响应</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="compareTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- 阶段二：诚实性检测 -->
+                                <hr class="my-3">
+                                <div class="mb-2">
+                                    <span class="badge bg-success">阶段二</span>
+                                    <strong class="small"> 诚实性检测</strong>
+                                </div>
+                            </div>
+                            <!-- 诚实性结果面板单独放在外面，因为verifyResultPanel可能还没显示 -->
+                            <div class="col-12 col-md-8 offset-md-4" id="honestyResultPanel" style="display:none;">
+                                <!-- 实时进度 -->
+                                <div id="honestyProgress" class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small text-secondary" id="honestyStatusText">准备中...</span>
+                                        <span class="small text-primary" id="honestyProgressText">0/10</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" id="honestyProgressBar" style="width: 0%">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 实时结果列表 -->
+                                <div id="honestyResults" class="mb-3" style="max-height: 250px; overflow-y: auto;">
+                                </div>
+
+                                <!-- 综合结果 -->
+                                <div class="row mb-3">
+                                    <div class="col-4 text-center">
+                                        <div class="p-3 rounded" style="background: var(--bg-input);">
+                                            <div id="honestyLevel" class="badge fs-6 mb-1">-</div>
+                                            <div class="small text-secondary">诚实性</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <div class="p-3 rounded" style="background: var(--bg-input);">
+                                            <div id="honestyScore" class="fw-bold text-primary fs-5">-</div>
+                                            <div class="small text-secondary">综合得分</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <div class="p-3 rounded" style="background: var(--bg-input);">
+                                            <div id="honestyConsistency" class="fw-bold fs-5">-</div>
+                                            <div class="small text-secondary">一致性</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 风险信号 -->
+                                <div id="honestyRisks" class="alert alert-warning small mb-3" style="display:none;">
+                                    <strong><i class="bi bi-exclamation-triangle"></i> 异常信号:</strong>
+                                    <ul class="mb-0 mt-1" id="honestyRiskList"></ul>
+                                </div>
+
+                                <!-- AI 智能分析按钮 -->
+                                <div id="honestyAiPanel" class="alert alert-info small mb-3" style="display:none;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-robot"></i>
+                                            <strong>AI 深度分析</strong>
+                                            <span class="text-secondary">- 让大模型分析是否存在提示词操控</span>
+                                        </div>
+                                        <button class="btn btn-sm btn-primary" onclick="runHonestyAiAnalyze()"
+                                            id="honestyAiBtn">
+                                            <i class="bi bi-cpu"></i> 开始分析
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- AI 分析结果 -->
+                                <div id="honestyAiResult" class="alert alert-secondary small mb-3"
+                                    style="display:none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <strong><i class="bi bi-cpu"></i> AI 分析结论</strong>
+                                        <div>
+                                            <span id="honestyAiSeverity" class="badge me-1">-</span>
+                                            <span id="honestyAiConfidence" class="badge bg-primary">-</span>
+                                        </div>
+                                    </div>
+                                    <div id="honestyAiManipulation" class="mb-2"></div>
+                                    <div id="honestyAiFindings" class="mb-2"></div>
+                                    <div id="honestyAiClues" class="mb-2"></div>
+                                    <div id="honestyAiRecommendation" class="mt-2 border-top pt-2"></div>
+                                </div>
+
+                                <!-- 详细回答 -->
+                                <div class="small">
+                                    <strong>详细检测结果:</strong>
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th width="15%">类别</th>
+                                                    <th width="55%">回答摘要</th>
+                                                    <th width="15%">得分</th>
+                                                    <th width="15%">判定</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="honestyTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card test-module mt-3" id="multimodalModule">
+                    <div class="card-header">
+                        <i class="bi bi-images"></i> 多模态视觉版本检测
+                    </div>
+                    <div class="card-body">
+                        <p class="text-secondary small mb-2">自动生成测试图片，通过基础+高级测试检测视觉模型版本真假</p>
+                        <div class="mb-2"><span class="badge bg-info text-dark" style="font-size:0.65rem;">基础 ×4</span>
+                            <span class="badge bg-warning text-dark" style="font-size:0.65rem;">高级 ×4</span>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-3">
+                                <div class="border rounded p-2 text-center" style="background:var(--bg-input);">
+                                    <div style="width:60px;height:30px;margin:0 auto 4px;">
+                                        <div style="display:flex;gap:3px;justify-content:center;">
+                                            <div style="width:14px;height:24px;background:red;border-radius:2px;"></div>
+                                            <div style="width:14px;height:24px;background:blue;border-radius:2px;">
+                                            </div>
+                                            <div style="width:14px;height:24px;background:green;border-radius:2px;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="fw-bold" style="font-size:0.7rem;">🎨色彩</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2 text-center" style="background:var(--bg-input);">
+                                    <div
+                                        style="width:60px;height:30px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;gap:3px;">
+                                        <div style="width:12px;height:12px;border-radius:50%;background:#FF6B6B;"></div>
+                                        <div style="width:12px;height:12px;background:#4ECDC4;"></div>
+                                        <div
+                                            style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid #FFE66D;">
+                                        </div>
+                                    </div>
+                                    <small class="fw-bold" style="font-size:0.7rem;">△形状</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2 text-center" style="background:var(--bg-input);">
+                                    <div
+                                        style="width:60px;height:30px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;">
+                                        <span
+                                            style="font-size:0.6rem;font-weight:bold;color:#333;border:1px solid #999;padding:1px 3px;border-radius:2px;">AI
+                                            2025</span>
+                                    </div>
+                                    <small class="fw-bold" style="font-size:0.7rem;">📝OCR</small>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="border rounded p-2 text-center" style="background:var(--bg-input);">
+                                    <div
+                                        style="width:60px;height:30px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;">
+                                        <span style="font-size:0.7rem;font-weight:bold;color:#E67E22;">📍📊🔍🎯</span>
+                                    </div>
+                                    <small class="fw-bold" style="font-size:0.7rem;">高级×4</small>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="runMultimodalTest()" id="multimodalBtn">
+                            <i class="bi bi-play-fill"></i> 开始检测
+                        </button>
+                        <div id="multimodalResult" style="display:none;" class="mt-3">
+                            <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded"
+                                style="background:var(--bg-input);">
+                                <div class="score-badge" id="mmScoreBadge">-</div>
+                                <div>
+                                    <div class="fw-bold" id="mmSupportLabel">检测中...</div>
+                                    <small class="text-secondary" id="mmSummaryText"></small>
+                                </div>
+                            </div>
+                            <div id="mmTestCards" class="row g-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 生图检测 -->
+                <div class="card test-module mt-3" id="imageGenModule">
+                    <div class="card-header">
+                        <i class="bi bi-palette"></i> 图片生成版本检测
+                    </div>
+                    <div class="card-body">
+                        <p class="text-secondary small mb-2">通过4项专项测试检测生图模型版本真假（文字渲染/复杂场景/风格控制/分辨率）</p>
+                        <div class="row g-1 mb-2">
+                            <div class="col-3"><span class="badge bg-light text-dark w-100"
+                                    style="font-size:0.65rem;">📝文字渲染</span></div>
+                            <div class="col-3"><span class="badge bg-light text-dark w-100"
+                                    style="font-size:0.65rem;">🎨复杂场景</span></div>
+                            <div class="col-3"><span class="badge bg-light text-dark w-100"
+                                    style="font-size:0.65rem;">🖌️风格控制</span></div>
+                            <div class="col-3"><span class="badge bg-light text-dark w-100"
+                                    style="font-size:0.65rem;">📐分辨率</span></div>
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" id="imgGenModel" value="dall-e-3"
+                                placeholder="生图模型名 (如 dall-e-3)">
+                        </div>
+                        <button class="btn btn-primary w-100 btn-sm" onclick="runImageGenTest()" id="imgGenBtn">
+                            <i class="bi bi-play-fill"></i> 开始版本检测
+                        </button>
+                        <div id="imgGenResult" style="display:none;" class="mt-2">
+                            <div class="d-flex align-items-center gap-2 p-2 rounded mb-2"
+                                style="background:var(--bg-input);">
+                                <div class="score-badge" id="imgGenScoreBadge"
+                                    style="width:40px;height:40px;font-size:0.9rem;">-</div>
+                                <div>
+                                    <div class="fw-bold small" id="imgGenVersionLabel">检测中...</div>
+                                    <small class="text-secondary" id="imgGenSummary"></small>
+                                </div>
+                            </div>
+                            <div id="imgGenTestCards" class="row g-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 生视频检测 -->
+                <div class="card test-module mt-3" id="videoGenModule">
+                    <div class="card-header">
+                        <i class="bi bi-camera-video"></i> 视频生成版本检测
+                    </div>
+                    <div class="card-body">
+                        <p class="text-secondary small mb-2">检测API视频生成能力，验证是否为标注的模型版本</p>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" id="vidGenModel" value=""
+                                placeholder="视频模型名 (留空自动探测)">
+                        </div>
+                        <button class="btn btn-primary w-100 btn-sm" onclick="runVideoGenTest()" id="vidGenBtn">
+                            <i class="bi bi-play-fill"></i> 开始版本检测
+                        </button>
+                        <div id="vidGenResult" style="display:none;" class="mt-2">
+                            <div class="d-flex align-items-center gap-2 p-2 rounded mb-2"
+                                style="background:var(--bg-input);">
+                                <div class="score-badge" id="vidGenScoreBadge"
+                                    style="width:40px;height:40px;font-size:0.9rem;">-</div>
+                                <div>
+                                    <div class="fw-bold small" id="vidGenVersionLabel">检测中...</div>
+                                    <small class="text-secondary" id="vidGenSummary"></small>
+                                </div>
+                            </div>
+                            <div id="vidGenTestCards" class="row g-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- /pane-verify -->
+
+            <!-- ========== Tab 2: 性能测试 ========== -->
+            <div class="tab-pane fade" id="pane-perf" role="tabpanel">
+                <div class="row g-2 g-md-3">
+                    <!-- 并发能力测试 -->
+                    <div class="col-6 col-md-4 mb-2 mb-md-4">
+                        <div class="card h-100 test-module" id="benchmarkModule">
+                            <div class="card-header py-2">
+                                <i class="bi bi-speedometer2"></i> <span class="d-none d-sm-inline">并发能力</span><span
+                                    class="d-sm-none">并发</span>
+                            </div>
+                            <div class="card-body py-2 py-md-3">
+                                <p class="text-secondary small mb-2 d-none d-md-block">测试响应速度和大Token处理能力</p>
+                                <div class="row g-1 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1">请求数</label>
+                                        <input type="number" class="form-control form-control-sm" id="numRequests"
+                                            value="5" min="1" max="50">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1">并发数</label>
+                                        <input type="number" class="form-control form-control-sm" id="concurrency"
+                                            value="3" min="1" max="10">
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm w-100" onclick="runBenchmark()">
+                                    <i class="bi bi-play-fill"></i> <span class="d-none d-sm-inline">开始</span>测试
+                                </button>
+                            </div>
+                            <div class="card-footer bg-transparent py-2" id="benchmarkResult" style="display:none;">
+                                <div class="small">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">成功率:</span>
+                                        <span id="bmSuccessRate">-</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">延迟:</span>
+                                        <span id="bmLatency">-</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">QPS:</span>
+                                        <span id="bmQps">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Token 计算 -->
+                    <div class="col-6 col-md-4 mb-2 mb-md-4">
+                        <div class="card h-100 test-module" id="tokenModule">
+                            <div class="card-header py-2">
+                                <i class="bi bi-calculator"></i> Token
+                            </div>
+                            <div class="card-body py-2 py-md-3">
+                                <p class="text-secondary small mb-2 d-none d-md-block">统计Token用量，用于账单对账</p>
+                                <div class="row g-1 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1">输入价</label>
+                                        <input type="number" class="form-control form-control-sm" id="priceInput"
+                                            value="0" step="0.01">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1">输出价</label>
+                                        <input type="number" class="form-control form-control-sm" id="priceOutput"
+                                            value="0" step="0.01">
+                                    </div>
+                                </div>
+                                <small class="text-secondary d-block mb-2">$/1M tokens</small>
+                                <button class="btn btn-primary btn-sm w-100" onclick="runTokenTest()">
+                                    <i class="bi bi-play-fill"></i> <span class="d-none d-sm-inline">开始</span>测试
+                                </button>
+                            </div>
+                            <div class="card-footer bg-transparent py-2" id="tokenResult" style="display:none;">
+                                <div class="small">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">输入:</span>
+                                        <span id="tkInput">-</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">输出:</span>
+                                        <span id="tkOutput">-</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">费用:</span>
+                                        <span id="tkCost">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Streaming 性能测试 -->
+                    <div class="col-6 col-md-4 mb-2 mb-md-4">
+                        <div class="card h-100 test-module" id="streamModule">
+                            <div class="card-header py-2">
+                                <i class="bi bi-water"></i> <span class="d-none d-sm-inline">Streaming</span><span
+                                    class="d-sm-none">流式</span>
+                                <span class="badge bg-info" style="font-size: 0.55rem;">NEW</span>
+                            </div>
+                            <div class="card-body py-2 py-md-3">
+                                <p class="text-secondary small mb-2 d-none d-md-block">测试流式响应性能</p>
+                                <button class="btn btn-primary btn-sm w-100" onclick="runStreamTest()">
+                                    <i class="bi bi-play-fill"></i> <span class="d-none d-sm-inline">开始</span>测试
+                                </button>
+                            </div>
+                            <div class="card-footer bg-transparent py-2" id="streamResult" style="display:none;">
+                                <div class="small">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">首字延迟:</span>
+                                        <span id="stTTFT">-</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">Chunk均延:</span>
+                                        <span id="stChunkLatency">-</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">总Chunks:</span>
+                                        <span id="stChunkCount">-</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">总耗时:</span>
+                                        <span id="stTotalTime">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- /pane-perf -->
+
+        </div> <!-- /tab-content -->
+
+        <!-- 完整测试按钮 (全局) -->
+        <div class="card mb-2 mb-md-4">
+            <div class="card-body py-2 py-md-3 d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="mb-0 mb-md-1 fs-6"><i class="bi bi-lightning-charge"></i> 完整测试</h6>
+                    <small class="text-secondary d-none d-md-inline">一次性运行以上所有测试</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-success btn-sm" onclick="runPing()" id="pingBtn" title="快速检测API是否在线">
+                        <i class="bi bi-broadcast"></i> Ping
+                    </button>
+                    <button class="btn btn-primary" onclick="runFullTest()">
+                        <i class="bi bi-play-fill"></i> 全部
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 测试日志 -->
+        <div class="card" id="logCard" style="display: none;">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-terminal"></i> 日志</span>
+                <button class="btn btn-sm btn-outline-secondary py-1 px-2" onclick="clearLog()">清空</button>
+            </div>
+            <div class="card-body py-2">
+                <div class="progress-log" id="progressLog"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="loading-content">
+        <div class="loading-icon mb-3">
+            <i class="bi bi-robot fs-1 text-primary"></i>
+        </div>
+        <h5 id="loadingText" class="mb-3">正在测试中...</h5>
+        <div class="progress-container">
+            <div class="progress" style="height: 8px; width: 300px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="loadingProgress"
+                    role="progressbar" style="width: 0%"></div>
+            </div>
+            <small class="text-secondary mt-2 d-block" id="loadingStep">准备中...</small>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const demoConfigs = {
+        'ai-in-one': {
+            name: 'AI-in-one',
+            base_url: 'https://ai-in.one',
+            provider: 'claude',
+            model: 'claude-sonnet-4-5-20250929',
+            api_format: 'anthropic',
+            price_input: 3,
+            price_output: 15
+        },
+        'anthropic': {
+            name: 'Anthropic官方',
+            base_url: 'https://api.anthropic.com',
+            provider: 'claude',
+            model: 'claude-sonnet-4-5-20250929',
+            api_format: 'anthropic',
+            price_input: 3,
+            price_output: 15
+        },
+        'deepseek': {
+            name: 'DeepSeek官方',
+            base_url: 'https://api.deepseek.com',
+            provider: 'deepseek',
+            model: 'deepseek-chat',
+            api_format: 'deepseek',
+            price_input: 1,
+            price_output: 2
+        },
+        'qwen': {
+            name: '通义千问官方',
+            base_url: 'https://dashscope.aliyuncs.com/compatible-mode',
+            provider: 'qwen',
+            model: 'qwen-plus',
+            api_format: 'qwen',
+            price_input: 0.8,
+            price_output: 2
+        },
+        'glm': {
+            name: '智谱官方',
+            base_url: 'https://open.bigmodel.cn/api/paas',
+            provider: 'glm',
+            model: 'glm-4-plus',
+            api_format: 'glm',
+            price_input: 50,
+            price_output: 50
+        }
+    };
+
+    // 模型列表配置
+    const modelLists = {
+        claude: `
+        <optgroup label="Claude 4.5 系列">
+            <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (推荐)</option>
+            <option value="claude-opus-4-5-20251101">Claude Opus 4.5</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+        </optgroup>
+        <optgroup label="Claude 4 系列">
+            <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+        </optgroup>
+        <optgroup label="Claude 3.5 系列">
+            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+            <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+        </optgroup>
+    `,
+        gpt: `
+        <optgroup label="GPT-4 系列">
+            <option value="gpt-4o">GPT-4o (推荐)</option>
+            <option value="gpt-4o-mini">GPT-4o Mini</option>
+            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+            <option value="gpt-4">GPT-4</option>
+        </optgroup>
+        <optgroup label="GPT-3.5 系列">
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+        </optgroup>
+    `,
+        gemini: `
+        <optgroup label="Gemini 2.0 系列">
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (推荐)</option>
+            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+        </optgroup>
+        <optgroup label="Gemini 1.5 系列">
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+        </optgroup>
+    `,
+        deepseek: `
+        <optgroup label="DeepSeek V3">
+            <option value="deepseek-chat">DeepSeek-V3 (推荐)</option>
+        </optgroup>
+        <optgroup label="DeepSeek R1 推理">
+            <option value="deepseek-reasoner">DeepSeek-R1 (深度推理)</option>
+        </optgroup>
+    `,
+        qwen: `
+        <optgroup label="Qwen Max 系列">
+            <option value="qwen-max">Qwen Max</option>
+            <option value="qwen-max-latest">Qwen Max Latest</option>
+        </optgroup>
+        <optgroup label="Qwen Plus 系列">
+            <option value="qwen-plus">Qwen Plus (推荐)</option>
+            <option value="qwen-plus-latest">Qwen Plus Latest</option>
+        </optgroup>
+        <optgroup label="Qwen Turbo 系列">
+            <option value="qwen-turbo">Qwen Turbo</option>
+            <option value="qwen-turbo-latest">Qwen Turbo Latest</option>
+        </optgroup>
+        <optgroup label="QwQ 推理">
+            <option value="qwq-plus">QwQ Plus (深度推理)</option>
+        </optgroup>
+    `,
+        glm: `
+        <optgroup label="GLM-4 系列">
+            <option value="glm-4-plus">GLM-4 Plus (推荐)</option>
+            <option value="glm-4-0520">GLM-4-0520</option>
+            <option value="glm-4-air">GLM-4 Air</option>
+            <option value="glm-4-airx">GLM-4 AirX</option>
+            <option value="glm-4-flash">GLM-4 Flash (免费)</option>
+        </optgroup>
+    `,
+        moonshot: `
+        <optgroup label="Moonshot 系列">
+            <option value="moonshot-v1-128k">Moonshot V1 128K (推荐)</option>
+            <option value="moonshot-v1-32k">Moonshot V1 32K</option>
+            <option value="moonshot-v1-8k">Moonshot V1 8K</option>
+        </optgroup>
+    `,
+        doubao: `
+        <optgroup label="豆包 系列">
+            <option value="doubao-1.5-pro-32k">豆包 1.5 Pro 32K (推荐)</option>
+            <option value="doubao-1.5-lite-32k">豆包 1.5 Lite 32K</option>
+            <option value="doubao-pro-32k">豆包 Pro 32K</option>
+            <option value="doubao-lite-32k">豆包 Lite 32K</option>
+        </optgroup>
+    `
+    };
+
+    // 厂商对应的API格式
+    const providerFormats = {
+        claude: 'anthropic',
+        gpt: 'azure_openai',
+        gemini: 'gemini'
+    };
+
+    function onProviderChange() {
+        const provider = document.querySelector('input[name="model_provider"]:checked').value;
+        const modelInput = document.getElementById('modelInput');
+        const apiFormat = document.getElementById('apiFormat');
+
+        // 设置默认模型名
+        const defaultModels = {
+            'claude': 'claude-sonnet-4-5-20250929',
+            'gpt': 'gpt-4o',
+            'gemini': 'gemini-2.0-flash',
+            'deepseek': 'deepseek-chat',
+            'qwen': 'qwen-max',
+            'glm': 'glm-4',
+            'moonshot': 'moonshot-v1-8k',
+            'doubao': 'doubao-pro-32k'
+        };
+        modelInput.value = defaultModels[provider] || '';
+        modelInput.placeholder = '输入模型名称，如: ' + (defaultModels[provider] || 'model-name');
+
+        // 更新API格式
+        apiFormat.value = providerFormats[provider];
+
+        // 触发状态更新
+        updateOfficialKeyStatus();
+    }
+
+    function onModelChange() {
+        // 可以在这里添加模型切换时的逻辑
+        updateOfficialKeyStatus();
+    }
+
+    function fillDemo(type) {
+        const config = demoConfigs[type];
+        document.querySelector('[name="name"]').value = config.name;
+        document.querySelector('[name="base_url"]').value = config.base_url;
+
+        // 设置厂商
+        const providerRadio = document.getElementById('provider' + config.provider.charAt(0).toUpperCase() + config.provider.slice(1));
+        if (providerRadio) {
+            providerRadio.checked = true;
+            onProviderChange();
+        }
+
+        // 设置模型
+        document.getElementById('modelInput').value = config.model;
+
+        document.querySelector('[name="api_format"]').value = config.api_format;
+        document.getElementById('priceInput').value = config.price_input;
+        document.getElementById('priceOutput').value = config.price_output;
+    }
+
+    function getConfig() {
+        const form = document.getElementById('configForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return null;
+        }
+
+        const model = document.getElementById('modelInput').value.trim();
+        if (!model) {
+            alert('请输入模型名称');
+            return null;
+        }
+
+        return {
+            name: form.querySelector('[name="name"]').value,
+            base_url: form.querySelector('[name="base_url"]').value,
+            api_key: form.querySelector('[name="api_key"]').value,
+            model: model,
+            api_format: form.querySelector('[name="api_format"]').value,
+            num_requests: parseInt(document.getElementById('numRequests').value),
+            concurrency: parseInt(document.getElementById('concurrency').value),
+            price_input: parseFloat(document.getElementById('priceInput').value),
+            price_output: parseFloat(document.getElementById('priceOutput').value)
+        };
+    }
+
+    function showLog() {
+        document.getElementById('logCard').style.display = 'block';
+    }
+
+    function clearLog() {
+        document.getElementById('progressLog').innerHTML = '';
+    }
+
+    function addLog(message, type = 'info') {
+        showLog();
+        const log = document.getElementById('progressLog');
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    let loadingInterval = null;
+    let currentProgress = 0;
+
+    function showLoading(text, steps = []) {
+        document.getElementById('loadingText').textContent = text;
+        document.getElementById('loadingStep').textContent = steps[0] || '正在连接API...';
+        document.getElementById('loadingProgress').style.width = '0%';
+        document.getElementById('loadingOverlay').style.display = 'flex';
+
+        currentProgress = 0;
+        let stepIndex = 0;
+        const stepTexts = steps.length > 0 ? steps : [
+            '正在连接API...',
+            '发送测试请求...',
+            '等待模型响应...',
+            '处理响应数据...',
+            '生成对比结果...'
+        ];
+
+        // 模拟进度
+        if (loadingInterval) clearInterval(loadingInterval);
+        loadingInterval = setInterval(() => {
+            if (currentProgress < 90) {
+                currentProgress += Math.random() * 3 + 1;
+                if (currentProgress > 90) currentProgress = 90;
+                document.getElementById('loadingProgress').style.width = currentProgress + '%';
+
+                // 更新步骤文字
+                const newStepIndex = Math.floor((currentProgress / 90) * stepTexts.length);
+                if (newStepIndex !== stepIndex && newStepIndex < stepTexts.length) {
+                    stepIndex = newStepIndex;
+                    document.getElementById('loadingStep').textContent = stepTexts[stepIndex];
+                }
+            }
+        }, 500);
+    }
+
+    function updateLoadingProgress(percent, stepText) {
+        currentProgress = percent;
+        document.getElementById('loadingProgress').style.width = percent + '%';
+        if (stepText) {
+            document.getElementById('loadingStep').textContent = stepText;
+        }
+    }
+
+    function hideLoading() {
+        if (loadingInterval) {
+            clearInterval(loadingInterval);
+            loadingInterval = null;
+        }
+        // 完成动画
+        document.getElementById('loadingProgress').style.width = '100%';
+        document.getElementById('loadingStep').textContent = '完成!';
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('loadingProgress').style.width = '0%';
+            currentProgress = 0;
+        }, 300);
+    }
+
+    // 全局配置状态
+    let settingsData = {};
+
+    // 检查原厂Key配置状态
+    async function checkOfficialKeyStatus() {
+        try {
+            const response = await fetch('/api/settings');
+            settingsData = await response.json();
+            updateOfficialKeyStatus();
+        } catch (e) {
+            console.error('检查配置失败:', e);
+        }
+    }
+
+    // 根据当前选择的API格式更新状态显示
+    function updateOfficialKeyStatus() {
+        const apiFormat = document.getElementById('apiFormat').value;
+        const statusEl = document.getElementById('officialKeyStatus');
+        const btnEl = document.getElementById('verifyBtn');
+
+        // 构建所有原厂配置状态
+        let statusItems = [];
+
+        // 所有支持的原厂对比模型
+        const allProviders = [
+            { key: 'has_openai_key', name: 'OpenAI' },
+            { key: 'has_anthropic_key', name: 'Anthropic' },
+            { key: 'has_azure_key', name: 'Azure' },
+            { key: 'has_gemini_key', name: 'Gemini' },
+            { key: 'has_deepseek_key', name: 'DeepSeek' },
+            { key: 'has_qwen_key', name: '千问' },
+            { key: 'has_glm_key', name: '智谱' },
+            { key: 'has_moonshot_key', name: 'Kimi' },
+            { key: 'has_doubao_key', name: '豆包' }
+        ];
+
+        allProviders.forEach(p => {
+            const has = settingsData[p.key];
+            if (has) {
+                statusItems.push(`<span style="font-size:0.7rem;font-weight:500;padding:3px 8px;background:#f0fdf4;color:#198754;border:1px solid #198754;border-radius:4px;">✓ ${p.name}</span>`);
+            } else {
+                statusItems.push(`<span class="badge bg-light text-secondary border" style="font-size:0.7rem;font-weight:400;padding:3px 8px;">${p.name}</span>`);
+            }
+        });
+
+        // 检查当前选择的API格式对应的原厂Key是否配置
+        const formatToKeyMap = {
+            'openai': { key: 'has_openai_key', name: 'OpenAI' },
+            'anthropic': { key: 'has_anthropic_key', name: 'Anthropic' },
+            'azure_openai': { key: 'has_azure_key', name: 'Azure' },
+            'gemini': { key: 'has_gemini_key', name: 'Gemini' },
+            'deepseek': { key: 'has_deepseek_key', name: 'DeepSeek' },
+            'qwen': { key: 'has_qwen_key', name: '通义千问' },
+            'glm': { key: 'has_glm_key', name: '智谱' },
+            'moonshot': { key: 'has_moonshot_key', name: '月之暗面' },
+            'doubao': { key: 'has_doubao_key', name: '豆包' }
+        };
+
+        const current = formatToKeyMap[apiFormat] || { key: 'has_openai_key', name: 'OpenAI' };
+        const currentHasKey = settingsData[current.key];
+
+        statusEl.className = 'alert alert-light small py-2 px-3 mb-3';
+        statusEl.innerHTML = `<div class="d-flex flex-wrap gap-1">${statusItems.join('')}</div>`;
+
+        // 只有当前选择的API格式对应的原厂Key配置了才能验证
+        btnEl.disabled = !currentHasKey;
+        if (!currentHasKey) {
+            statusEl.innerHTML += `<div class="mt-1 text-warning small">当前选择的 ${current.name} 格式需要配置对应原厂Key</div>`;
+        }
+    }
+
+    // 页面加载时检查配置
+    document.addEventListener('DOMContentLoaded', checkOfficialKeyStatus);
+
+    // 全局存储验证数据（用于AI分析）
+    let lastVerifyData = null;
+    let lastHonestyData = null;
+
+    // 流式模型真实性验证
+    // 完整真假检测（阶段一+阶段二连续执行）
+    async function runFullVerify() {
+        const btn = document.getElementById('verifyBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 阶段一：真实性验证中...';
+        addLog('[模型真假检测] 开始阶段一：真实性验证', 'info');
+
+        try {
+            // 阶段一：模型真实性验证
+            await runVerifyStream();
+
+            // 阶段二：诚实性检测
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 阶段二：诚实性检测中...';
+            addLog('[模型真假检测] 开始阶段二：诚实性检测', 'info');
+            await runHonestyStream();
+
+            addLog('[模型真假检测] 两阶段检测完成', 'success');
+        } catch (e) {
+            addLog('[模型真假检测] 出错: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> 开始验证';
+        }
+    }
+
+    async function runVerifyStream() {
+        const config = getConfig();
+        if (!config) return;
+
+        // 显示结果面板和重置
+        document.getElementById('verifyResultPanel').style.display = 'block';
+        document.getElementById('streamProgress').style.display = 'block';
+        document.getElementById('streamResults').innerHTML = '';
+        document.getElementById('compareTable').innerHTML = '';
+        document.getElementById('verifyReasons').style.display = 'none';
+        document.getElementById('aiAnalyzePanel').style.display = 'none';
+        document.getElementById('aiAnalyzeResult').style.display = 'none';
+        document.getElementById('deepAnalyzeResult').style.display = 'none';
+        document.getElementById('verifyStatus').textContent = '-';
+        document.getElementById('verifySimilarity').textContent = '-';
+        document.getElementById('verifyModelMatch').textContent = '-';
+
+        // 禁用按钮
+        document.getElementById('verifyBtn').disabled = true;
+
+        addLog('开始流式验证: ' + config.name, 'info');
+        addLog('待测模型: ' + config.model, 'info');
+
+        try {
+            const response = await fetch('/api/test/verify/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || '请求失败');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let totalQuestions = 8;
+            let completedQuestions = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            handleStreamEvent(data, config);
+
+                            if (data.event === 'start') {
+                                totalQuestions = data.total_questions || 8;
+                                if (data.model_mapping) {
+                                    addLog('模型映射: ' + data.original_model + ' → ' + data.official_model, 'info');
+                                }
+                            } else if (data.event === 'question') {
+                                completedQuestions++;
+                                updateStreamProgress(completedQuestions, totalQuestions, data);
+                            } else if (data.event === 'progress') {
+                                document.getElementById('streamStatusText').textContent = data.message;
+                            } else if (data.event === 'complete') {
+                                handleVerifyComplete(data, config);
+                            } else if (data.event === 'error') {
+                                addLog('错误: ' + data.message, 'error');
+                            }
+                        } catch (e) {
+                            console.error('Parse error:', e);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            addLog('请求失败: ' + e.message, 'error');
+            alert('请求失败: ' + e.message);
+        } finally {
+            document.getElementById('streamProgress').style.display = 'none';
+        }
+    }
+
+    function updateStreamProgress(completed, total, data) {
+        const percent = (completed / total) * 100;
+        document.getElementById('streamProgressBar').style.width = percent + '%';
+        document.getElementById('streamProgressText').textContent = `${completed}/${total}`;
+
+        // 添加实时结果
+        const resultsDiv = document.getElementById('streamResults');
+        const resultItem = document.createElement('div');
+        resultItem.className = 'border-bottom py-1 small';
+
+        const typeIcon = data.type === 'identity' ? '🔍' : '📝';
+        const simBadge = data.similarity >= 0
+            ? `<span class="badge ${data.similarity >= 0.3 ? 'bg-success' : data.similarity >= 0.2 ? 'bg-warning' : 'bg-danger'} ms-1">${(data.similarity * 100).toFixed(0)}%</span>`
+            : '<span class="badge bg-secondary ms-1">N/A</span>';
+
+        const testStatus = data.test_valid ? '✓' : '✗';
+        const officialStatus = data.official_valid ? '✓' : '✗';
+
+        resultItem.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <span>${typeIcon} <strong>${data.category}</strong> ${simBadge}</span>
+            <span class="text-secondary">
+                待测: <span class="${data.test_valid ? 'text-success' : 'text-danger'}">${testStatus}</span>
+                原厂: <span class="${data.official_valid ? 'text-success' : 'text-danger'}">${officialStatus}</span>
+            </span>
+        </div>
+    `;
+        resultsDiv.appendChild(resultItem);
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+
+        addLog(`问题${completed}: ${data.category} - 相似度 ${data.similarity >= 0 ? (data.similarity * 100).toFixed(0) + '%' : 'N/A'}`,
+            data.test_valid && data.official_valid ? 'info' : 'warning');
+    }
+
+    function handleStreamEvent(data, config) {
+        // 处理流式事件
+    }
+
+    function handleVerifyComplete(result, config) {
+        addLog('验证完成: ' + result.authenticity, 'success');
+        addLog('待测API有效响应: ' + result.test_valid_count + '/' + result.total_questions, 'info');
+        addLog('原厂API有效响应: ' + result.official_valid_count + '/' + result.total_questions, 'info');
+        addLog('响应相似度: ' + (result.similarity * 100).toFixed(1) + '%', 'info');
+
+        // 存储验证数据供AI分析使用
+        lastVerifyData = result;
+
+        // 更新结果显示
+        const status = document.getElementById('verifyStatus');
+        status.textContent = result.authenticity;
+        const statusClass = {
+            '可信': 'bg-success',
+            '存疑': 'bg-warning',
+            '可疑': 'bg-danger',
+            '待验证': 'bg-info',
+            '无法验证': 'bg-secondary'
+        }[result.authenticity] || 'bg-secondary';
+        status.className = 'badge fs-6 mb-1 ' + statusClass;
+
+        document.getElementById('verifySimilarity').textContent = (result.similarity * 100).toFixed(1) + '%';
+
+        const matchEl = document.getElementById('verifyModelMatch');
+        matchEl.textContent = result.model_match ? '✓ 匹配' : '✗ 不匹配';
+        matchEl.className = 'fw-bold fs-5 ' + (result.model_match ? 'text-success' : 'text-danger');
+
+        // 存疑原因
+        const reasonsDiv = document.getElementById('verifyReasons');
+        const reasonList = document.getElementById('reasonList');
+        reasonList.innerHTML = '';
+
+        if (result.reasons && result.reasons.length > 0) {
+            reasonsDiv.style.display = 'block';
+            result.reasons.forEach(r => {
+                const li = document.createElement('li');
+                li.textContent = r;
+                li.className = r.includes('失败') || r.includes('错误') ? 'text-danger' : 'text-warning';
+                reasonList.appendChild(li);
+            });
+        } else {
+            reasonsDiv.style.display = 'none';
+        }
+
+        // 显示AI分析按钮
+        document.getElementById('aiAnalyzePanel').style.display = 'block';
+
+        // 构建对比表格
+        buildCompareTable(result.comparison_details || []);
+    }
+
+    function buildCompareTable(comparisons) {
+        const table = document.getElementById('compareTable');
+        table.innerHTML = '';
+
+        comparisons.forEach((comp, i) => {
+            const tr = document.createElement('tr');
+            const sim = comp.similarity;
+
+            let simBadge = sim < 0
+                ? '<span class="badge bg-secondary">N/A</span>'
+                : `<span class="badge ${sim >= 0.3 ? 'bg-success' : sim >= 0.2 ? 'bg-warning' : 'bg-danger'}">${(sim * 100).toFixed(0)}%</span>`;
+
+            const typeIcon = comp.type === 'identity' ? '🔍' : '📝';
+            const questionShort = comp.question.length > 60 ? comp.question.substring(0, 60) + '...' : comp.question;
+
+            let testContent = comp.test_valid === false || comp.test_response?.startsWith('[Error:')
+                ? `<div class="text-danger small"><i class="bi bi-x-circle"></i> ${escapeHtml(comp.test_response?.substring(0, 100) || '调用失败')}</div>`
+                : `<div class="border-start border-primary border-3 ps-2">${escapeHtml(comp.test_response?.substring(0, 200) || '-')}${comp.test_response?.length > 200 ? '...' : ''}</div>`;
+
+            let officialContent = comp.official_valid === false || comp.official_response?.startsWith('[Error:')
+                ? `<div class="text-danger small"><i class="bi bi-x-circle"></i> ${escapeHtml(comp.official_response?.substring(0, 100) || '调用失败')}</div>`
+                : `<div class="border-start border-success border-3 ps-2">${escapeHtml(comp.official_response?.substring(0, 200) || '-')}${comp.official_response?.length > 200 ? '...' : ''}</div>`;
+
+            tr.innerHTML = `
+            <td class="small align-top">
+                <div class="fw-bold mb-1">${typeIcon} ${comp.category} ${simBadge}</div>
+                <div class="text-secondary" style="font-size:0.75rem;">${escapeHtml(questionShort)}</div>
+            </td>
+            <td class="small text-break align-top" style="max-width:250px;">
+                ${testContent}
+            </td>
+            <td class="small text-break align-top" style="max-width:250px;">
+                ${officialContent}
+            </td>
+        `;
+            table.appendChild(tr);
+        });
+    }
+
+    // AI 智能分析
+    async function runAiAnalyze() {
+        const config = getConfig();
+        if (!config || !lastVerifyData) {
+            alert('请先进行模型验证');
+            return;
+        }
+
+        const btn = document.getElementById('aiAnalyzeBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 分析中...';
+
+        addLog('开始AI智能分析...', 'info');
+
+        try {
+            const response = await fetch('/api/test/ai-analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...config,
+                    verify_data: lastVerifyData
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('AI分析失败: ' + result.error, 'error');
+                alert('AI分析失败: ' + result.error);
+            } else {
+                displayAiAnalysisResult(result);
+                addLog('AI分析完成 - ' + (result.is_shell ? '⚠️ 怀疑套壳' : '✓ 未发现套壳迹象'),
+                    result.is_shell ? 'warning' : 'success');
+            }
+        } catch (e) {
+            addLog('AI分析请求失败: ' + e.message, 'error');
+            alert('请求失败: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cpu"></i> 开始分析';
+        }
+    }
+
+    function displayAiAnalysisResult(result) {
+        const resultDiv = document.getElementById('aiAnalyzeResult');
+        resultDiv.style.display = 'block';
+
+        // 置信度
+        const confidenceEl = document.getElementById('aiConfidence');
+        confidenceEl.textContent = '信心: ' + result.confidence + '%';
+        confidenceEl.className = 'badge ' + (result.confidence >= 70 ? 'bg-success' : result.confidence >= 40 ? 'bg-warning' : 'bg-danger');
+
+        // 主要结论
+        const contentEl = document.getElementById('aiAnalysisContent');
+        const shellStatus = result.is_shell
+            ? '<span class="text-danger fw-bold">⚠️ 怀疑套壳</span>'
+            : '<span class="text-success fw-bold">✓ 未发现套壳迹象</span>';
+
+        let suspectedInfo = '';
+        if (result.is_shell && result.suspected_model) {
+            suspectedInfo = `<br><small class="text-secondary">推测可能是: <strong>${result.suspected_model}</strong></small>`;
+        }
+
+        contentEl.innerHTML = `
+        <div class="mb-2">${shellStatus}${suspectedInfo}</div>
+        <div class="text-secondary small">${result.recommendation || ''}</div>
+    `;
+
+        // 关键发现
+        const findingsEl = document.getElementById('aiKeyFindings');
+        if (result.key_findings && result.key_findings.length > 0) {
+            findingsEl.innerHTML = `
+            <div class="mt-2">
+                <strong class="small">关键发现:</strong>
+                <ul class="mb-0 small">
+                    ${result.key_findings.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+        } else {
+            findingsEl.innerHTML = '';
+        }
+
+        // 如果怀疑套壳，显示深度测试按钮
+        if (result.need_deep_test) {
+            document.getElementById('deepTestPanel').style.display = 'block';
+        } else {
+            document.getElementById('deepTestPanel').style.display = 'none';
+        }
+    }
+
+    // 深度测试 - 推测真实模型
+    async function runDeepAnalyze() {
+        const config = getConfig();
+        if (!config) return;
+
+        const btn = document.getElementById('deepAnalyzeBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 深度分析中...';
+
+        addLog('开始深度测试，推测真实模型...', 'info');
+
+        try {
+            const response = await fetch('/api/test/deep-analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('深度测试失败: ' + result.error, 'error');
+                alert('深度测试失败: ' + result.error);
+            } else {
+                displayDeepAnalysisResult(result);
+                addLog('深度测试完成 - 推测模型: ' + result.predicted_model, 'success');
+            }
+        } catch (e) {
+            addLog('深度测试请求失败: ' + e.message, 'error');
+            alert('请求失败: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-zoom-in"></i> 深度测试';
+        }
+    }
+
+    function displayDeepAnalysisResult(result) {
+        const resultDiv = document.getElementById('deepAnalyzeResult');
+        resultDiv.style.display = 'block';
+
+        const contentEl = document.getElementById('deepAnalysisContent');
+
+        // 模型得分柱状图
+        let scoresHtml = '<div class="mb-3"><strong>模型特征得分:</strong><div class="mt-2">';
+        const maxScore = Math.max(...Object.values(result.model_scores), 1);
+
+        const modelLabels = {
+            'claude': 'Claude',
+            'gpt': 'GPT',
+            'gemini': 'Gemini',
+            'llama': 'LLaMA',
+            'other': '其他'
+        };
+
+        for (const [model, score] of Object.entries(result.model_scores)) {
+            const percent = (score / maxScore) * 100;
+            const isTop = model === result.predicted_model_key;
+            scoresHtml += `
+            <div class="d-flex align-items-center mb-1">
+                <span class="small" style="width:60px;">${modelLabels[model] || model}</span>
+                <div class="flex-grow-1 mx-2">
+                    <div class="progress" style="height: 12px;">
+                        <div class="progress-bar ${isTop ? 'bg-danger' : 'bg-primary'}" style="width: ${percent}%"></div>
+                    </div>
+                </div>
+                <span class="small fw-bold" style="width:30px;">${score}</span>
+            </div>
+        `;
+        }
+        scoresHtml += '</div></div>';
+
+        // 结论
+        const conclusionHtml = `
+        <div class="alert ${result.confidence >= 60 ? 'alert-warning' : 'alert-info'} mb-3">
+            <strong>🎯 推测结论:</strong> ${result.predicted_model}<br>
+            <small>信心程度: ${result.confidence}%</small>
+        </div>
+    `;
+
+        // 测试详情
+        let detailsHtml = '<details><summary class="small text-secondary mb-2" style="cursor:pointer;">查看测试详情</summary><div class="small">';
+        result.test_results.forEach(t => {
+            const keywords = t.matched_keywords.length > 0
+                ? `<span class="badge bg-info ms-1">${t.matched_keywords.join(', ')}</span>`
+                : '';
+            detailsHtml += `
+            <div class="border-bottom py-2">
+                <div class="fw-bold">${t.question}${keywords}</div>
+                <div class="text-secondary mt-1" style="font-size:0.75rem;">${escapeHtml(t.response.substring(0, 200))}...</div>
+            </div>
+        `;
+        });
+        detailsHtml += '</div></details>';
+
+        contentEl.innerHTML = conclusionHtml + scoresHtml + detailsHtml;
+    }
+
+    // 保留原始的非流式验证函数作为备用
+    async function runVerify() {
+        const config = getConfig();
+        if (!config) return;
+
+        showLoading('正在对比验证模型真实性...', [
+            '连接待测API...',
+            '发送复杂测试问题...',
+            '等待待测API响应...',
+            '连接原厂API...',
+            '等待原厂API响应...',
+            '计算响应相似度...',
+            '生成验证报告...'
+        ]);
+        addLog('开始模型真实性验证: ' + config.name, 'info');
+        addLog('待测模型: ' + config.model, 'info');
+        addLog('对比原厂: 使用相同模型 ' + config.model, 'info');
+
+        try {
+            const response = await fetch('/api/test/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('错误: ' + result.error, 'error');
+                alert('验证失败: ' + result.error);
+            } else {
+                lastVerifyData = result;
+                handleVerifyComplete(result, config);
+            }
+        } catch (e) {
+            addLog('请求失败: ' + e.message, 'error');
+            alert('请求失败: ' + e.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 提示词诚实性检测（流式）
+    async function runHonestyStream() {
+        const config = getConfig();
+        if (!config) return;
+
+        const btn = document.getElementById('honestyBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 检测中...';
+
+        // 显示结果面板
+        document.getElementById('honestyResultPanel').style.display = 'block';
+        document.getElementById('honestyResults').innerHTML = '';
+        document.getElementById('honestyTable').innerHTML = '';
+        document.getElementById('honestyRisks').style.display = 'none';
+        document.getElementById('honestyLevel').textContent = '-';
+        document.getElementById('honestyScore').textContent = '-';
+        document.getElementById('honestyConsistency').textContent = '-';
+
+        addLog('开始提示词诚实性检测: ' + config.name, 'info');
+
+        try {
+            const response = await fetch('/api/test/honesty/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let totalQuestions = 10;
+            let completedQuestions = 0;
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    try {
+                        const data = JSON.parse(line.substring(6));
+                        handleHonestyEvent(data);
+                        if (data.event === 'start') {
+                            totalQuestions = data.total_questions;
+                        } else if (data.event === 'question') {
+                            completedQuestions++;
+                            const pct = (completedQuestions / totalQuestions * 100).toFixed(0);
+                            document.getElementById('honestyProgressBar').style.width = pct + '%';
+                            document.getElementById('honestyProgressText').textContent = completedQuestions + '/' + totalQuestions;
+                        }
+                    } catch (e) { }
+                }
+            }
+
+            addLog('诚实性检测完成', 'success');
+        } catch (e) {
+            addLog('诚实性检测失败: ' + e.message, 'error');
+            alert('检测失败: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> 开始检测';
+        }
+    }
+
+    function handleHonestyEvent(data) {
+        switch (data.event) {
+            case 'start':
+                document.getElementById('honestyStatusText').textContent = '正在检测...';
+                break;
+
+            case 'progress':
+                document.getElementById('honestyStatusText').textContent = data.message;
+                break;
+
+            case 'question': {
+                // 实时结果列表
+                const resultsDiv = document.getElementById('honestyResults');
+                const levelBadge = data.level === 'honest'
+                    ? '<span class="badge bg-success">诚实</span>'
+                    : data.level === 'suspicious'
+                        ? '<span class="badge bg-warning">存疑</span>'
+                        : '<span class="badge bg-danger">可疑</span>';
+
+                const item = document.createElement('div');
+                item.className = 'border-bottom py-1 d-flex justify-content-between align-items-center';
+                item.innerHTML = `
+                    <span class="small">${escapeHtml(data.category)}</span>
+                    <span>${levelBadge} <span class="small text-secondary ms-1">${data.score}分</span></span>
+                `;
+                resultsDiv.appendChild(item);
+                resultsDiv.scrollTop = resultsDiv.scrollHeight;
+
+                // 详细表格
+                const table = document.getElementById('honestyTable');
+                const row = document.createElement('tr');
+                const badgeClass = data.level === 'honest' ? 'success' : data.level === 'suspicious' ? 'warning' : 'danger';
+                const levelText = data.level === 'honest' ? '诚实' : data.level === 'suspicious' ? '存疑' : '可疑';
+                row.innerHTML = `
+                    <td><span class="badge bg-secondary">${escapeHtml(data.category)}</span></td>
+                    <td class="small" style="max-width:300px;word-break:break-all;">${escapeHtml(data.response).substring(0, 200)}${data.response && data.response.length > 200 ? '...' : ''}</td>
+                    <td class="text-center"><strong>${data.score}</strong></td>
+                    <td class="text-center"><span class="badge bg-${badgeClass}">${levelText}</span></td>
+                `;
+                table.appendChild(row);
+
+                addLog(`[诚实性] ${data.category}: ${levelText} (${data.score}分)`, data.level === 'honest' ? 'success' : 'warning');
+                break;
+            }
+
+            case 'consistency': {
+                const icon = data.consistent ? '✅' : '⚠️';
+                addLog(`[一致性检查] ${icon} 得分: ${data.score}, ${data.details}`, data.consistent ? 'success' : 'warning');
+                break;
+            }
+
+            case 'complete': {
+                // 综合结果
+                document.getElementById('honestyStatusText').textContent = '检测完成';
+                document.getElementById('honestyProgressBar').style.width = '100%';
+
+                // 诚实性等级
+                const levelEl = document.getElementById('honestyLevel');
+                levelEl.textContent = data.honesty_level;
+                levelEl.className = `badge bg-${data.level_class} fs-6 mb-1`;
+
+                // 综合得分
+                document.getElementById('honestyScore').textContent = data.honesty_score + '分';
+
+                // 一致性
+                const consistEl = document.getElementById('honestyConsistency');
+                consistEl.textContent = data.consistency_consistent ? '一致' : '不一致';
+                consistEl.className = `fw-bold fs-5 text-${data.consistency_consistent ? 'success' : 'danger'}`;
+
+                // 风险信号
+                if (data.risk_signals && data.risk_signals.length > 0) {
+                    document.getElementById('honestyRisks').style.display = 'block';
+                    const riskList = document.getElementById('honestyRiskList');
+                    riskList.innerHTML = '';
+                    data.risk_signals.forEach(s => {
+                        const li = document.createElement('li');
+                        li.textContent = s;
+                        riskList.appendChild(li);
+                    });
+                }
+
+                addLog(`[诚实性结论] ${data.honesty_level} - 综合得分: ${data.honesty_score}`, data.level_class === 'success' ? 'success' : 'warning');
+
+                // 保存数据并显示AI分析按钮
+                lastHonestyData = data;
+                document.getElementById('honestyAiPanel').style.display = 'block';
+                document.getElementById('honestyAiResult').style.display = 'none';
+                break;
+            }
+
+            case 'error':
+                addLog('诚实性检测错误: ' + data.message, 'error');
+                break;
+        }
+    }
+
+    // AI 深度分析诚实性检测结果
+    async function runHonestyAiAnalyze() {
+        if (!lastHonestyData) {
+            alert('请先运行诚实性检测');
+            return;
+        }
+
+        const config = getConfig();
+        if (!config) return;
+
+        const btn = document.getElementById('honestyAiBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> AI分析中...';
+        addLog('[AI分析] 正在调用AI深度分析诚实性检测结果...', 'info');
+
+        try {
+            const response = await fetch('/api/test/honesty/ai-analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...config,
+                    honesty_data: lastHonestyData
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('[AI分析] 失败: ' + result.error, 'error');
+                alert('AI分析失败: ' + result.error);
+                return;
+            }
+
+            // 显示结果面板
+            document.getElementById('honestyAiResult').style.display = 'block';
+
+            // 严重程度
+            const severityEl = document.getElementById('honestyAiSeverity');
+            const severityMap = {
+                'high': { text: '高风险', class: 'bg-danger' },
+                'medium': { text: '中风险', class: 'bg-warning' },
+                'low': { text: '低风险', class: 'bg-success' }
+            };
+            const severity = severityMap[result.severity] || severityMap['low'];
+            severityEl.textContent = severity.text;
+            severityEl.className = `badge me-1 ${severity.class}`;
+
+            // 置信度
+            document.getElementById('honestyAiConfidence').textContent = `置信度 ${result.confidence}%`;
+
+            // 操控判定
+            const manipEl = document.getElementById('honestyAiManipulation');
+            if (result.manipulation_detected) {
+                const types = (result.manipulation_type || []).join('、') || '未知类型';
+                manipEl.innerHTML = `<div class="text-danger"><i class="bi bi-exclamation-octagon"></i> <strong>检测到提示词操控</strong></div><div class="mt-1">操控类型: <strong>${escapeHtml(types)}</strong></div>`;
+            } else {
+                manipEl.innerHTML = '<div class="text-success"><i class="bi bi-check-circle"></i> <strong>未检测到明显的提示词操控</strong></div>';
+            }
+
+            // 关键发现
+            const findingsEl = document.getElementById('honestyAiFindings');
+            if (result.key_findings && result.key_findings.length > 0) {
+                findingsEl.innerHTML = '<div class="fw-bold mb-1"><i class="bi bi-lightbulb"></i> 关键发现:</div><ul class="mb-0">' +
+                    result.key_findings.map(f => `<li>${escapeHtml(f)}</li>`).join('') + '</ul>';
+            } else {
+                findingsEl.innerHTML = '';
+            }
+
+            // 系统提示词线索
+            const cluesEl = document.getElementById('honestyAiClues');
+            if (result.system_prompt_clues && result.system_prompt_clues.length > 0) {
+                cluesEl.innerHTML = '<div class="fw-bold mb-1"><i class="bi bi-search"></i> 系统提示词线索:</div><ul class="mb-0">' +
+                    result.system_prompt_clues.map(c => `<li>${escapeHtml(c)}</li>`).join('') + '</ul>';
+            } else {
+                cluesEl.innerHTML = '';
+            }
+
+            // 建议
+            const recEl = document.getElementById('honestyAiRecommendation');
+            if (result.recommendation) {
+                recEl.innerHTML = `<i class="bi bi-chat-left-text"></i> <strong>建议:</strong> ${escapeHtml(result.recommendation)}`;
+            } else {
+                recEl.innerHTML = '';
+            }
+
+            addLog(`[AI分析] 完成 - ${result.manipulation_detected ? '检测到操控' : '未检测到操控'} (${severity.text}, 置信度${result.confidence}%)`,
+                result.manipulation_detected ? 'warning' : 'success');
+
+        } catch (e) {
+            addLog('[AI分析] 请求失败: ' + e.message, 'error');
+            alert('AI分析请求失败: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cpu"></i> 开始分析';
+        }
+    }
+
+    // 并发能力测试
+    async function runBenchmark() {
+        const config = getConfig();
+        if (!config) return;
+
+        showLoading('正在测试并发能力...', [
+            '初始化测试环境...',
+            '发送并发请求...',
+            '等待响应返回...',
+            '统计延迟数据...',
+            '生成性能报告...'
+        ]);
+        addLog('开始并发测试: ' + config.num_requests + '请求, ' + config.concurrency + '并发', 'info');
+
+        try {
+            const response = await fetch('/api/test/benchmark', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('错误: ' + result.error, 'error');
+            } else {
+                addLog('测试完成: 成功率 ' + (result.success_rate * 100).toFixed(0) + '%', 'success');
+                document.getElementById('benchmarkResult').style.display = 'block';
+                document.getElementById('bmSuccessRate').textContent = (result.success_rate * 100).toFixed(0) + '%';
+                document.getElementById('bmLatency').textContent = (result.avg_latency_ms / 1000).toFixed(1) + 's';
+                document.getElementById('bmQps').textContent = result.qps.toFixed(2);
+            }
+        } catch (e) {
+            addLog('请求失败: ' + e.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Token 计算测试
+    // Streaming 性能测试
+    async function runStreamTest() {
+        const config = getConfig();
+        if (!config) return;
+
+        addLog('[Streaming] 开始流式性能测试...', 'info');
+        const btn = document.querySelector('#streamModule button');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        try {
+            const response = await fetch('/api/test/streaming', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('[Streaming] 失败: ' + result.error, 'error');
+                alert('流式测试失败: ' + result.error);
+            } else {
+                document.getElementById('streamResult').style.display = 'block';
+                document.getElementById('stTTFT').textContent = (result.ttft_ms / 1000).toFixed(2) + 's';
+                document.getElementById('stChunkLatency').textContent = result.avg_chunk_latency_ms.toFixed(0) + 'ms';
+                document.getElementById('stChunkCount').textContent = result.chunk_count;
+                document.getElementById('stTotalTime').textContent = (result.total_time_ms / 1000).toFixed(1) + 's';
+                addLog(`[Streaming] TTFT: ${(result.ttft_ms / 1000).toFixed(2)}s | Chunks: ${result.chunk_count} | 稳定性: ${(result.stability * 100).toFixed(0)}%`, 'success');
+            }
+        } catch (e) {
+            addLog('[Streaming] 请求失败: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> <span class="d-none d-sm-inline">开始</span>测试';
+        }
+    }
+
+    async function runTokenTest() {
+        const config = getConfig();
+        if (!config) return;
+
+        showLoading('正在计算Token...', [
+            '连接API...',
+            '发送测试请求...',
+            '等待响应...',
+            '统计Token用量...',
+            '计算费用...'
+        ]);
+        addLog('开始Token计算测试', 'info');
+
+        try {
+            const response = await fetch('/api/test/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('错误: ' + result.error, 'error');
+            } else {
+                addLog('计算完成: 总Token ' + result.total_tokens, 'success');
+                document.getElementById('tokenResult').style.display = 'block';
+                document.getElementById('tkInput').textContent = result.input_tokens.toLocaleString();
+                document.getElementById('tkOutput').textContent = result.output_tokens.toLocaleString();
+                document.getElementById('tkCost').textContent = result.estimated_cost > 0 ?
+                    '$' + result.estimated_cost.toFixed(4) : '-';
+            }
+        } catch (e) {
+            addLog('请求失败: ' + e.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // 完整测试
+    async function runFullTest() {
+        const config = getConfig();
+        if (!config) return;
+
+        showLoading('正在运行完整测试...', [
+            '初始化测试...',
+            '验证模型真实性...',
+            '检测提示词诚实性...',
+            '测试并发能力...',
+            '统计Token用量...',
+            '计算费用...',
+            '生成综合报告...'
+        ]);
+        clearLog();
+        addLog('开始完整测试: ' + config.name, 'info');
+
+        try {
+            const response = await fetch('/api/test/full', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('错误: ' + result.error, 'error');
+                alert('测试失败: ' + result.error);
+            } else {
+                addLog('完整测试完成!', 'success');
+
+                // 更新所有结果
+                if (result.verify) {
+                    document.getElementById('verifyResult').style.display = 'block';
+                    const status = document.getElementById('verifyStatus');
+                    status.textContent = result.verify.authenticity;
+                    status.className = 'badge ' + (result.verify.authenticity === '可信' ? 'bg-success' :
+                        result.verify.authenticity === '存疑' ? 'bg-warning' : 'bg-danger');
+                }
+
+                if (result.benchmark) {
+                    document.getElementById('benchmarkResult').style.display = 'block';
+                    document.getElementById('bmSuccessRate').textContent = (result.benchmark.success_rate * 100).toFixed(0) + '%';
+                    document.getElementById('bmLatency').textContent = (result.benchmark.avg_latency_ms / 1000).toFixed(1) + 's';
+                    document.getElementById('bmQps').textContent = result.benchmark.qps.toFixed(2);
+                }
+
+                if (result.token) {
+                    document.getElementById('tokenResult').style.display = 'block';
+                    document.getElementById('tkInput').textContent = result.token.input_tokens.toLocaleString();
+                    document.getElementById('tkOutput').textContent = result.token.output_tokens.toLocaleString();
+                    document.getElementById('tkCost').textContent = result.token.estimated_cost > 0 ?
+                        '$' + result.token.estimated_cost.toFixed(4) : '-';
+                }
+
+                // 诚实性检测结果
+                if (result.honesty) {
+                    document.getElementById('honestyResultPanel').style.display = 'block';
+                    document.getElementById('honestyStatusText').textContent = '检测完成（完整测试）';
+                    document.getElementById('honestyProgressBar').style.width = '100%';
+                    document.getElementById('honestyProgressText').textContent = result.honesty.total_questions + '/' + result.honesty.total_questions;
+
+                    // 诚实性等级
+                    const levelEl = document.getElementById('honestyLevel');
+                    levelEl.textContent = result.honesty.honesty_level;
+                    levelEl.className = `badge bg-${result.honesty.level_class} fs-6 mb-1`;
+
+                    // 综合得分
+                    document.getElementById('honestyScore').textContent = result.honesty.honesty_score + '分';
+
+                    // 一致性
+                    const consistEl = document.getElementById('honestyConsistency');
+                    consistEl.textContent = result.honesty.consistency_consistent ? '一致' : '不一致';
+                    consistEl.className = `fw-bold fs-5 text-${result.honesty.consistency_consistent ? 'success' : 'danger'}`;
+
+                    // 风险信号
+                    if (result.honesty.risk_signals && result.honesty.risk_signals.length > 0) {
+                        document.getElementById('honestyRisks').style.display = 'block';
+                        const riskList = document.getElementById('honestyRiskList');
+                        riskList.innerHTML = '';
+                        result.honesty.risk_signals.forEach(s => {
+                            const li = document.createElement('li');
+                            li.textContent = s;
+                            riskList.appendChild(li);
+                        });
+                    }
+
+                    // 保存数据供AI分析使用
+                    lastHonestyData = result.honesty;
+                    document.getElementById('honestyAiPanel').style.display = 'block';
+
+                    addLog(`[诚实性] ${result.honesty.honesty_level} - 得分: ${result.honesty.honesty_score}`, result.honesty.level_class === 'success' ? 'success' : 'warning');
+                }
+
+                // 显示下载和查看按钮
+                if (result.record_id) {
+                    addLog('测试完成! 记录ID: ' + result.record_id, 'success');
+                    showDownloadButtons(result.record_id);
+                }
+            }
+        } catch (e) {
+            addLog('请求失败: ' + e.message, 'error');
+            alert('请求失败: ' + e.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // API Ping 健康检查
+    async function runPing() {
+        const config = getConfig();
+        if (!config) return;
+
+        const btn = document.getElementById('pingBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        addLog(`[Ping] 检测 ${config.name} 可用性...`, 'info');
+
+        try {
+            const response = await fetch('/api/test/ping', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            const result = await response.json();
+
+            if (result.status === 'online') {
+                addLog(`[Ping] ✓ 在线 - 延迟: ${(result.latency_ms / 1000).toFixed(2)}s | 模型: ${result.response_model || '-'}`, 'success');
+            } else {
+                addLog(`[Ping] ✗ 离线 - ${result.error || '无法连接'}`, 'error');
+            }
+        } catch (e) {
+            addLog('[Ping] 请求失败: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-broadcast"></i> Ping';
+        }
+    }
+
+
+    // 多模态视觉测试
+    async function runMultimodalTest() {
+        const config = getConfig();
+        if (!config) { alert('请先填写 API 配置'); return; }
+
+        const btn = document.getElementById('multimodalBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 检测中... 发送8个视觉测试（基础+高级）';
+        addLog('[多模态] 开始视觉版本检测（基础4项+高级4项）...', 'info');
+
+        try {
+            const response = await fetch('/api/test/multimodal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    base_url: config.base_url,
+                    api_key: config.api_key,
+                    model: config.model,
+                    api_format: config.api_format
+                })
+            });
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('[多模态] 失败: ' + result.error, 'error');
+                return;
+            }
+
+            document.getElementById('multimodalResult').style.display = 'block';
+
+            // 总分
+            const summary = result.summary;
+            const scoreBadge = document.getElementById('mmScoreBadge');
+            const supportLabel = document.getElementById('mmSupportLabel');
+            const summaryText = document.getElementById('mmSummaryText');
+
+            scoreBadge.textContent = summary.avg_score;
+            scoreBadge.className = 'score-badge ' + (summary.avg_score >= 70 ? 'score-high' : summary.avg_score >= 40 ? 'score-medium' : 'score-low');
+
+            // 版本估计
+            const versionLabels = {
+                'high': { text: '✓ 高版本模型', cls: 'text-success', desc: '高级测试表现优秀，与标注版本一致' },
+                'medium': { text: '⚠ 中等版本', cls: 'text-warning', desc: '高级测试表现一般，可能为中端版本' },
+                'low': { text: '✗ 疑似低版本', cls: 'text-danger', desc: '高级测试较弱，可能使用了低版本/mini模型' },
+                'very_low': { text: '✗ 极弱/不匹配', cls: 'text-danger', desc: '视觉能力极弱，高度疑似降级模型' },
+                'not_supported': { text: '✗ 不支持视觉', cls: 'text-danger', desc: '该API不支持多模态视觉' }
+            };
+            const vInfo = versionLabels[summary.version_estimate] || versionLabels['not_supported'];
+
+            if (summary.vision_supported) {
+                supportLabel.innerHTML = `<span class="${vInfo.cls}">${vInfo.text}</span>`;
+            } else {
+                supportLabel.innerHTML = '<span class="text-danger">✗ 不支持多模态视觉</span>';
+            }
+            summaryText.innerHTML = `${vInfo.desc}<br>基础得分: <strong>${summary.basic_score}</strong> | 高级得分: <strong>${summary.advanced_score}</strong> | 通过 ${summary.passed}/${summary.total_tests} 项`;
+
+            // 各项测试卡片
+            const testNames = {
+                'colors': '🎨 色彩识别',
+                'shapes': '△ 形状识别',
+                'text_ocr': '📝 文字识别',
+                'counting': '🔢 计数能力',
+                'spatial_reasoning': '📍 空间推理',
+                'detail_description': '🔍 细节描述',
+                'math_visual': '📊 图表理解',
+                'multi_object': '🎯 多目标统计'
+            };
+
+            const cardsContainer = document.getElementById('mmTestCards');
+            cardsContainer.innerHTML = result.results.map(r => {
+                const name = testNames[r.test_type] || r.test_type;
+                const passed = r.success && r.score >= 30;
+                const diffBadge = r.difficulty === 'advanced'
+                    ? '<span class="badge bg-warning text-dark" style="font-size:0.6rem;">高级</span>'
+                    : '<span class="badge bg-info text-dark" style="font-size:0.6rem;">基础</span>';
+                return `<div class="col-6 col-md-3">
+                    <div class="border rounded p-2" style="background:var(--bg-input);">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold small">${name}</span>
+                            ${diffBadge}
+                        </div>
+                        <div class="mb-1">
+                            <span class="badge ${passed ? 'bg-success' : 'bg-danger'}" style="font-size:0.65rem;">${passed ? '✓' : '✗'} ${r.success ? r.score + '%' : '失败'}</span>
+                            ${r.latency_ms ? `<span class="text-secondary" style="font-size:0.65rem;"> ${(r.latency_ms / 1000).toFixed(1)}s</span>` : ''}
+                        </div>
+                        ${r.success ? `
+                            <div class="small" style="max-height:60px;overflow-y:auto;font-size:0.7rem;color:var(--text-secondary);white-space:pre-wrap;">${escapeHtml(r.response?.substring(0, 150) || '')}</div>
+                        ` : `
+                            <div class="small text-danger" style="font-size:0.7rem;">${escapeHtml(r.error?.substring(0, 100) || '失败')}</div>
+                        `}
+                    </div>
+                </div>`;
+            }).join('');
+
+            addLog(`[多模态] 完成! 版本估计: ${vInfo.text}, 基础${summary.basic_score}分, 高级${summary.advanced_score}分`, summary.version_estimate === 'high' ? 'success' : 'warning');
+
+        } catch (e) {
+            addLog('[多模态] 请求失败: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> 开始检测';
+        }
+    }
+
+    // 生图检测
+    async function runImageGenTest() {
+        const config = getConfig();
+        if (!config) { alert('请先填写 API 配置'); return; }
+
+        const btn = document.getElementById('imgGenBtn');
+        const model = document.getElementById('imgGenModel').value;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 版本检测中（4项测试，含AI评估）...';
+        addLog('[生图版本检测] 开始4项检测...', 'info');
+
+        try {
+            const response = await fetch('/api/test/image-gen', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    base_url: config.base_url, api_key: config.api_key,
+                    model: model, chat_model: config.model, api_format: config.api_format
+                })
+            });
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('[生图版本检测] 失败: ' + result.error, 'error');
+                return;
+            }
+
+            document.getElementById('imgGenResult').style.display = 'block';
+
+            const summary = result.summary;
+            const scoreBadge = document.getElementById('imgGenScoreBadge');
+            const versionLabel = document.getElementById('imgGenVersionLabel');
+            const summaryEl = document.getElementById('imgGenSummary');
+
+            scoreBadge.textContent = summary.total_score;
+            scoreBadge.className = 'score-badge ' + (summary.total_score >= 75 ? 'score-high' : summary.total_score >= 50 ? 'score-medium' : 'score-low');
+
+            const vLabels = {
+                'high': { text: '✓ 高版本模型', cls: 'text-success' },
+                'medium': { text: '⚠ 中等版本', cls: 'text-warning' },
+                'low': { text: '✗ 疑似低版本', cls: 'text-danger' },
+                'very_low': { text: '✗ 极弱/不匹配', cls: 'text-danger' },
+                'not_supported': { text: '✗ 不支持生图', cls: 'text-danger' }
+            };
+            const vInfo = vLabels[summary.version_estimate] || vLabels['not_supported'];
+            versionLabel.innerHTML = `<span class="${vInfo.cls}">${vInfo.text}</span>`;
+            summaryEl.textContent = `通过 ${summary.passed}/${summary.total_tests} 项测试`;
+
+            // 各测试结果卡片
+            const cardsEl = document.getElementById('imgGenTestCards');
+            cardsEl.innerHTML = result.results.map(r => {
+                const passed = r.success && r.score >= 40;
+                let detailHtml = '';
+                if (r.success && r.detail) {
+                    const d = r.detail;
+                    if (d.text_found) detailHtml = `识别: ${escapeHtml(d.text_found)}`;
+                    else if (d.found) detailHtml = `✓${d.found?.length || 0}项`;
+                    else if (d.style) detailHtml = escapeHtml(d.style);
+                    else if (d.width) detailHtml = `${d.width}×${d.height}`;
+                    else if (d.note) detailHtml = d.note;
+                    else if (d.raw) detailHtml = escapeHtml(d.raw.substring(0, 80));
+                }
+                return `<div class="col-6">
+                    <div class="border rounded p-2" style="background:var(--bg-input);font-size:0.75rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold">${r.label}</span>
+                            <span class="badge ${passed ? 'bg-success' : 'bg-danger'}" style="font-size:0.6rem;">${r.success ? r.score + '分' : '失败'}</span>
+                        </div>
+                        ${r.success ? `
+                            <div class="text-secondary" style="font-size:0.65rem;">${detailHtml}</div>
+                            ${r.image_url ? `<img src="${escapeHtml(r.image_url)}" style="max-width:100%;max-height:80px;border-radius:4px;margin-top:4px;" alt="">` : ''}
+                        ` : `
+                            <div class="text-danger" style="font-size:0.65rem;">${escapeHtml(r.error?.substring(0, 80) || '')}</div>
+                        `}
+                    </div>
+                </div>`;
+            }).join('');
+
+            addLog(`[生图版本检测] 完成! 版本估计: ${vInfo.text}, 综合 ${summary.total_score} 分`, summary.version_estimate === 'high' ? 'success' : 'warning');
+
+        } catch (e) {
+            addLog('[生图版本检测] 请求失败: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> 开始版本检测';
+        }
+    }
+
+    // 生视频版本检测
+    async function runVideoGenTest() {
+        const config = getConfig();
+        if (!config) { alert('请先填写 API 配置'); return; }
+
+        const btn = document.getElementById('vidGenBtn');
+        const model = document.getElementById('vidGenModel').value;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 版本检测中...';
+        addLog('[生视频版本检测] 开始检测...', 'info');
+
+        try {
+            const response = await fetch('/api/test/video-gen', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    base_url: config.base_url, api_key: config.api_key,
+                    model: model
+                })
+            });
+            const result = await response.json();
+
+            if (result.error) {
+                addLog('[生视频版本检测] 失败: ' + result.error, 'error');
+                return;
+            }
+
+            document.getElementById('vidGenResult').style.display = 'block';
+
+            const summary = result.summary;
+            const scoreBadge = document.getElementById('vidGenScoreBadge');
+            const versionLabel = document.getElementById('vidGenVersionLabel');
+            const summaryEl = document.getElementById('vidGenSummary');
+
+            scoreBadge.textContent = summary.total_score;
+            scoreBadge.className = 'score-badge ' + (summary.total_score >= 80 ? 'score-high' : summary.total_score >= 50 ? 'score-medium' : 'score-low');
+
+            const vLabels = {
+                'high': { text: '✓ 高版本模型', cls: 'text-success' },
+                'medium': { text: '⚠ 中等版本', cls: 'text-warning' },
+                'low': { text: '✗ 疑似低版本', cls: 'text-danger' },
+                'not_supported': { text: '✗ 不支持视频生成', cls: 'text-danger' }
+            };
+            const vInfo = vLabels[summary.version_estimate] || vLabels['not_supported'];
+            versionLabel.innerHTML = `<span class="${vInfo.cls}">${vInfo.text}</span>`;
+            summaryEl.textContent = summary.endpoint ? `端点: ${summary.endpoint}` : '未找到可用端点';
+
+            // 各测试结果卡片
+            const cardsEl = document.getElementById('vidGenTestCards');
+            cardsEl.innerHTML = result.results.map(r => {
+                const passed = r.success;
+                let detail = '';
+                if (r.task_id) detail += `任务: ${r.task_id} `;
+                if (r.status) detail += `状态: ${r.status} `;
+                if (r.specs && Object.keys(r.specs).length) detail += JSON.stringify(r.specs);
+                if (r.latency_ms) detail += ` ${(r.latency_ms / 1000).toFixed(1)}s`;
+                return `<div class="col-6">
+                    <div class="border rounded p-2" style="background:var(--bg-input);font-size:0.75rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold">${r.label}</span>
+                            <span class="badge ${passed ? 'bg-success' : 'bg-danger'}" style="font-size:0.6rem;">${passed ? '✓' : '✗'}</span>
+                        </div>
+                        <div class="${passed ? 'text-secondary' : 'text-danger'}" style="font-size:0.65rem;">${passed ? escapeHtml(detail) : escapeHtml(r.error?.substring(0, 100) || '失败')}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            addLog(`[生视频版本检测] 完成! ${vInfo.text}`, summary.supported ? 'success' : 'warning');
+
+        } catch (e) {
+            addLog('[生视频版本检测] 请求失败: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> 开始版本检测';
+        }
+    }
+
+    // 显示下载按钮
+    function showDownloadButtons(recordId) {
+        let btnContainer = document.getElementById('downloadBtnContainer');
+        if (!btnContainer) {
+            btnContainer = document.createElement('div');
+            btnContainer.id = 'downloadBtnContainer';
+            btnContainer.className = 'text-center py-3 border-top mt-3';
+            document.getElementById('logCard').querySelector('.card-body').appendChild(btnContainer);
+        }
+        btnContainer.innerHTML = `
+        <div class="d-flex gap-2 justify-content-center">
+            <a href="/api/record/${recordId}/download" class="btn btn-success">
+                <i class="bi bi-download"></i> 下载报告
+            </a>
+            <a href="/record/${recordId}" class="btn btn-primary">
+                <i class="bi bi-eye"></i> 查看详情
+            </a>
+            <a href="/history" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history"></i> 历史记录
+            </a>
+        </div>
+    `;
+    }
+</script>
+{% endblock %}

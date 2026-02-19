@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Database
+*.db
+
+# Logs
+*.log
+app.pid
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Settings (contains API keys)
+settings.json
+
+# System
+.gemini/

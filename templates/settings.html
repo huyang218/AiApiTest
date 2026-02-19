@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}系统设置 - EchoMind AI API 检测平台{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+        <div class="card">
+            <div class="card-header py-2">
+                <i class="bi bi-gear"></i> 系统设置
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-2 g-md-3">
+                        <!-- OpenAI 原厂配置 -->
+                        <div class="col-12 col-md-3 mb-2 mb-md-0">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="mb-2 fs-6" style="color: #10a37f;">
+                                    <i class="bi bi-openai"></i> OpenAI
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="openai_api_key"
+                                        placeholder="sk-..."
+                                        value="{{ settings.openai.api_key if settings.openai else '' }}">
+                                    {% if masked_openai %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="openai_base_url"
+                                        value="{{ settings.openai.base_url if settings.openai else 'https://api.openai.com' }}"
+                                        placeholder="https://api.openai.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Anthropic 原厂配置 -->
+                        <div class="col-12 col-md-3 mb-2 mb-md-0">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="text-primary mb-2 fs-6">
+                                    <i class="bi bi-robot"></i> Anthropic
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="anthropic_api_key"
+                                        placeholder="sk-ant-..."
+                                        value="{{ settings.anthropic.api_key if settings.anthropic else '' }}">
+                                    {% if masked_anthropic %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="anthropic_base_url"
+                                        value="{{ settings.anthropic.base_url if settings.anthropic else 'https://api.anthropic.com' }}"
+                                        placeholder="https://api.anthropic.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Azure OpenAI 原厂配置 -->
+                        <div class="col-12 col-md-3 mb-2 mb-md-0">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="text-success mb-2 fs-6">
+                                    <i class="bi bi-microsoft"></i> Azure OpenAI
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="azure_api_key"
+                                        placeholder="Azure Key..."
+                                        value="{{ settings.azure_openai.api_key if settings.azure_openai else '' }}">
+                                    {% if masked_azure %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="azure_base_url"
+                                        value="{{ settings.azure_openai.base_url if settings.azure_openai else '' }}"
+                                        placeholder="https://xxx.openai.azure.com/openai">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gemini 原厂配置 -->
+                        <div class="col-12 col-md-3 mb-2 mb-md-0">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="text-info mb-2 fs-6">
+                                    <i class="bi bi-google"></i> Gemini
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="gemini_api_key"
+                                        placeholder="AIzaSy..."
+                                        value="{{ settings.gemini.api_key if settings.gemini else '' }}">
+                                    {% if masked_gemini %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="gemini_base_url"
+                                        value="{{ settings.gemini.base_url if settings.gemini else 'https://generativelanguage.googleapis.com' }}"
+                                        placeholder="https://generativelanguage...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- 国产模型配置 -->
+                    <h6 class="text-secondary mb-2 fs-6">
+                        <i class="bi bi-flag"></i> 国产模型原厂配置
+                    </h6>
+                    <div class="row g-2 g-md-3">
+                        <!-- DeepSeek 配置 -->
+                        <div class="col-12 col-md-4 mb-2 mb-md-3">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="mb-2 fs-6" style="color: #4d6bfe;">
+                                    <i class="bi bi-stars"></i> DeepSeek
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="deepseek_api_key"
+                                        placeholder="sk-..."
+                                        value="{{ settings.deepseek.api_key if settings.deepseek else '' }}">
+                                    {% if masked_deepseek %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="deepseek_base_url"
+                                        value="{{ settings.deepseek.base_url if settings.deepseek else 'https://api.deepseek.com' }}"
+                                        placeholder="https://api.deepseek.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 通义千问 配置 -->
+                        <div class="col-12 col-md-4 mb-2 mb-md-3">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="mb-2 fs-6" style="color: #6f42c1;">
+                                    <i class="bi bi-chat-dots"></i> 通义千问 (Qwen)
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="qwen_api_key"
+                                        placeholder="sk-..."
+                                        value="{{ settings.qwen.api_key if settings.qwen else '' }}">
+                                    {% if masked_qwen %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="qwen_base_url"
+                                        value="{{ settings.qwen.base_url if settings.qwen else 'https://dashscope.aliyuncs.com/compatible-mode' }}"
+                                        placeholder="https://dashscope.aliyuncs.com/compatible-mode">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 智谱GLM 配置 -->
+                        <div class="col-12 col-md-4 mb-2 mb-md-3">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="mb-2 fs-6" style="color: #1a73e8;">
+                                    <i class="bi bi-lightbulb"></i> 智谱 (GLM)
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="glm_api_key"
+                                        placeholder="API Key..."
+                                        value="{{ settings.glm.api_key if settings.glm else '' }}">
+                                    {% if masked_glm %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="glm_base_url"
+                                        value="{{ settings.glm.base_url if settings.glm else 'https://open.bigmodel.cn/api/paas' }}"
+                                        placeholder="https://open.bigmodel.cn/api/paas">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 月之暗面 配置 -->
+                        <div class="col-12 col-md-4 mb-2 mb-md-3">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="mb-2 fs-6" style="color: #1a1a2e;">
+                                    <i class="bi bi-moon-stars"></i> 月之暗面 (Moonshot)
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="moonshot_api_key"
+                                        placeholder="sk-..."
+                                        value="{{ settings.moonshot.api_key if settings.moonshot else '' }}">
+                                    {% if masked_moonshot %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="moonshot_base_url"
+                                        value="{{ settings.moonshot.base_url if settings.moonshot else 'https://api.moonshot.cn' }}"
+                                        placeholder="https://api.moonshot.cn">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 豆包 配置 -->
+                        <div class="col-12 col-md-4 mb-2 mb-md-3">
+                            <div class="border rounded p-2 p-md-3 h-100">
+                                <h6 class="mb-2 fs-6" style="color: #ff6600;">
+                                    <i class="bi bi-box"></i> 豆包 (Doubao)
+                                </h6>
+                                <div class="mb-2">
+                                    <label class="form-label small mb-1">API Key</label>
+                                    <input type="password" class="form-control form-control-sm" name="doubao_api_key"
+                                        placeholder="API Key..."
+                                        value="{{ settings.doubao.api_key if settings.doubao else '' }}">
+                                    {% if masked_doubao %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> 已配置</small>
+                                    {% else %}
+                                    <small class="text-warning"><i class="bi bi-x-circle"></i> 未配置</small>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label small mb-1">Base URL</label>
+                                    <input type="url" class="form-control form-control-sm" name="doubao_base_url"
+                                        value="{{ settings.doubao.base_url if settings.doubao else 'https://ark.cn-beijing.volces.com/api' }}"
+                                        placeholder="https://ark.cn-beijing.volces.com/api">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- 模型映射配置 -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="text-secondary mb-0 fs-6">
+                                <i class="bi bi-arrow-left-right"></i> 模型名称映射
+                            </h6>
+                            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2"
+                                onclick="addMapping()">
+                                <i class="bi bi-plus"></i> 添加
+                            </button>
+                        </div>
+                        <p class="text-secondary small mb-2">将第三方平台的模型名映射到原厂模型名，用于真实性验证时的对比</p>
+                        <div id="mappingContainer">
+                            {% for key, value in (settings.model_mapping or {}).items() %}
+                            <div class="mapping-row d-flex gap-1 mb-1 align-items-center">
+                                <input type="text" class="form-control form-control-sm" name="mapping_key[]"
+                                    value="{{ key }}" placeholder="第三方模型名">
+                                <span class="text-secondary px-1">→</span>
+                                <input type="text" class="form-control form-control-sm" name="mapping_value[]"
+                                    value="{{ value }}" placeholder="原厂模型名">
+                                <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1"
+                                    onclick="removeMapping(this)">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- 登录设置 -->
+                    <div class="row">
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <h6 class="text-secondary mb-2 fs-6">
+                                <i class="bi bi-shield-lock"></i> 登录密钥
+                            </h6>
+                            <div class="mb-3">
+                                <input type="password" class="form-control form-control-sm" name="admin_key"
+                                    placeholder="留空不修改">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 w-md-auto">
+                        <i class="bi bi-check-lg"></i> 保存设置
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header py-2">
+                <i class="bi bi-info-circle"></i> 说明
+            </div>
+            <div class="card-body small text-secondary py-2">
+                <p class="mb-2 d-none d-md-block"><strong>工作原理：</strong>验证时向待测API和原厂API发送相同请求，对比响应相似度判断真实性。</p>
+                <div class="row g-2 d-none d-md-flex">
+                    <div class="col-md-3">
+                        <span style="color:#10a37f" class="fw-bold">OpenAI</span> - 验证 GPT 模型
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-primary fw-bold">Anthropic</span> - 验证 Claude 模型
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-success fw-bold">Azure</span> - 验证 GPT 模型
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-info fw-bold">Gemini</span> - 验证 Gemini 模型
+                    </div>
+                    <div class="col-md-12 mt-1">
+                        <small class="text-secondary">国产模型：</small>
+                        <span style="color: #4d6bfe;" class="fw-bold">DeepSeek</span> ·
+                        <span style="color: #6f42c1;" class="fw-bold">通义千问</span> ·
+                        <span style="color: #1a73e8;" class="fw-bold">智谱GLM</span> ·
+                        <span style="color: #1a1a2e;" class="fw-bold">月之暗面</span> ·
+                        <span style="color: #ff6600;" class="fw-bold">豆包</span>
+                    </div>
+                </div>
+                <p class="mb-0 d-md-none">配置原厂API Key后，可验证待测API的模型真实性。支持海外及国产模型。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function addMapping() {
+        const container = document.getElementById('mappingContainer');
+        const row = document.createElement('div');
+        row.className = 'mapping-row d-flex gap-1 mb-1 align-items-center';
+        row.innerHTML = `
+        <input type="text" class="form-control form-control-sm" name="mapping_key[]" placeholder="第三方模型名">
+        <span class="text-secondary px-1">→</span>
+        <input type="text" class="form-control form-control-sm" name="mapping_value[]" placeholder="原厂模型名">
+        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1" onclick="removeMapping(this)">
+            <i class="bi bi-x"></i>
+        </button>
+    `;
+        container.appendChild(row);
+        row.querySelector('input').focus();
+    }
+
+    function removeMapping(btn) {
+        btn.closest('.mapping-row').remove();
+    }
+</script>
+{% endblock %}

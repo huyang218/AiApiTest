@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}测试详情 - EchoMind AI API 检测平台{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex justify-content-between">
+    <a href="{{ url_for('pages.history') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回列表
+    </a>
+    <div class="d-flex gap-2">
+        <a href="/api/record/{{ record['id'] }}/export-html" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-code"></i> 导出HTML
+        </a>
+        <a href="/api/record/{{ record['id'] }}/download" class="btn btn-success">
+            <i class="bi bi-download"></i> 下载报告
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <!-- 概览卡片 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> 测试概览
+            </div>
+            <div class="card-body text-center">
+                {% set score = record['overall_score']|default(0)|round|int %}
+                <div class="score-badge mx-auto mb-3 {% if score >= 70 %}score-high{% elif score >= 40 %}score-medium{% else %}score-low{% endif %}"
+                    style="width: 80px; height: 80px; font-size: 1.5rem;">
+                    {{ score }}
+                </div>
+                <h5>{{ record['provider_name'] }}</h5>
+                <code>{{ record['model'] }}</code>
+                <p class="text-secondary mt-2 mb-0">
+                    <small>{{ record['created_at'] }}</small>
+                </p>
+            </div>
+        </div>
+
+        <!-- 配置信息 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-gear"></i> 配置信息
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-secondary">Base URL</td>
+                        <td><code style="font-size: 0.75rem;">{{ record['base_url'] }}</code></td>
+                    </tr>
+                    <tr>
+                        <td class="text-secondary">API 格式</td>
+                        <td>{{ record['api_format'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-secondary">输入价格</td>
+                        <td>${{ record['price_input'] }}/1M</td>
+                    </tr>
+                    <tr>
+                        <td class="text-secondary">输出价格</td>
+                        <td>${{ record['price_output'] }}/1M</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- 模型验证 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-shield-check"></i> 模型验证
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background: var(--bg-dark);">
+                            <div class="text-secondary mb-1">模型真实性</div>
+                            <div
+                                class="h5 mb-0 {% if record['model_authenticity'] == '可信' %}text-success{% elif record['model_authenticity'] == '存疑' %}text-warning{% else %}text-danger{% endif %}">
+                                {{ record['model_authenticity'] or '未知' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background: var(--bg-dark);">
+                            <div class="text-secondary mb-1">响应模型</div>
+                            <div class="h6 mb-0">
+                                <code>{{ record['response_model'] or '-' }}</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="table table-sm">
+                    <tr>
+                        <td class="text-secondary" width="30%">知识截止日期</td>
+                        <td>{{ record['knowledge_cutoff'][:100] if record['knowledge_cutoff'] else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-secondary">一致性得分</td>
+                        <td>{{ (record['consistency_score'] * 100)|round|int }}%</td>
+                    </tr>
+                    <tr>
+                        <td class="text-secondary">推理测试</td>
+                        <td>
+                            {% if record['reasoning_correct'] %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> 通过</span>
+                            {% else %}
+                            <span class="text-warning"><i class="bi bi-question-circle"></i> 需验证</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 诚实性检测 -->
+        {% if record['honesty_level'] %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-eye"></i> 诚实性检测
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded text-center" style="background: var(--bg-dark);">
+                            <div class="text-secondary mb-1">诚实性判定</div>
+                            <div
+                                class="h5 mb-0 {% if record['honesty_level'] == '诚实' %}text-success{% elif record['honesty_level'] == '存疑' %}text-warning{% else %}text-danger{% endif %}">
+                                {{ record['honesty_level'] }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded text-center" style="background: var(--bg-dark);">
+                            <div class="text-secondary mb-1">诚实性得分</div>
+                            <div class="h5 mb-0">{{ record['honesty_score']|default(0)|round(1) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded text-center" style="background: var(--bg-dark);">
+                            <div class="text-secondary mb-1">一致性</div>
+                            {% set honesty_data = record['honesty_details']|from_json if record['honesty_details'] else
+                            {} %}
+                            <div
+                                class="h5 mb-0 {% if honesty_data.get('consistency_consistent', True) %}text-success{% else %}text-danger{% endif %}">
+                                {{ '一致' if honesty_data.get('consistency_consistent', True) else '不一致' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if honesty_data.get('risk_signals') %}
+                <div class="alert alert-warning small mb-2">
+                    <strong><i class="bi bi-exclamation-triangle"></i> 异常信号:</strong>
+                    <ul class="mb-0 mt-1">
+                        {% for signal in honesty_data['risk_signals'] %}
+                        <li>{{ signal }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if honesty_data.get('results') %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead>
+                            <tr>
+                                <th>类别</th>
+                                <th>得分</th>
+                                <th>判定</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in honesty_data['results'] %}
+                            <tr>
+                                <td><span class="badge bg-secondary">{{ r.category }}</span></td>
+                                <td>{{ r.score }}</td>
+                                <td>
+                                    {% if r.level == 'honest' %}
+                                    <span class="badge bg-success">诚实</span>
+                                    {% elif r.level == 'suspicious' %}
+                                    <span class="badge bg-warning">存疑</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">可疑</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 性能测试 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-speedometer2"></i> 性能测试
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ record['total_requests'] }}</div>
+                            <div class="stat-label">总请求数</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-value text-success">{{ record['successful_requests'] }}</div>
+                            <div class="stat-label">成功</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-value text-danger">{{ record['failed_requests'] }}</div>
+                            <div class="stat-label">失败</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ (record['success_rate'] * 100)|round|int }}%</div>
+                            <div class="stat-label">成功率</div>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="table table-sm">
+                    <tr>
+                        <td class="text-secondary">总耗时</td>
+                        <td>{{ (record['total_time_ms'] / 1000)|round(2) }} 秒</td>
+                        <td class="text-secondary">QPS</td>
+                        <td>{{ record['qps']|round(2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-secondary">平均延迟</td>
+                        <td>{{ (record['avg_latency_ms'] / 1000)|round(2) }}s</td>
+                        <td class="text-secondary">最小延迟</td>
+                        <td>{{ (record['min_latency_ms'] / 1000)|round(2) }}s</td>
+                    </tr>
+                    <tr>
+                        <td class="text-secondary">P50 延迟</td>
+                        <td>{{ (record['p50_latency_ms'] / 1000)|round(2) }}s</td>
+                        <td class="text-secondary">P90 延迟</td>
+                        <td>{{ (record['p90_latency_ms'] / 1000)|round(2) }}s</td>
+                    </tr>
+                    <tr>
+                        <td class="text-secondary">P99 延迟</td>
+                        <td>{{ (record['p99_latency_ms'] / 1000)|round(2) }}s</td>
+                        <td class="text-secondary">最大延迟</td>
+                        <td>{{ (record['max_latency_ms'] / 1000)|round(2) }}s</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Token 对账 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-calculator"></i> Token 对账
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ record['total_input_tokens']|default(0) }}</div>
+                            <div class="stat-label">输入 Tokens</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ record['total_output_tokens']|default(0) }}</div>
+                            <div class="stat-label">输出 Tokens</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ record['total_tokens']|default(0) }}</div>
+                            <div class="stat-label">总 Tokens</div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="stat-card">
+                            <div class="stat-value">${{ record['estimated_cost']|round(4) }}</div>
+                            <div class="stat-label">预估费用</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <small class="text-secondary">
+                        Tokens/秒: {{ record['tokens_per_second']|round(1) }}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 请求详情 -->
+        {% if record['request_details'] %}
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-check"></i> 请求详情
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>状态</th>
+                                <th>延迟</th>
+                                <th>输入</th>
+                                <th>输出</th>
+                                <th>总计</th>
+                                <th>错误</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in record['request_details']|from_json %}
+                            <tr>
+                                <td>{{ req.request_id }}</td>
+                                <td>
+                                    {% if req.success %}
+                                    <span class="text-success"><i class="bi bi-check-circle"></i></span>
+                                    {% else %}
+                                    <span class="text-danger"><i class="bi bi-x-circle"></i></span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ (req.latency_ms / 1000)|round(2) }}s</td>
+                                <td>{{ req.input_tokens }}</td>
+                                <td>{{ req.output_tokens }}</td>
+                                <td>{{ req.total_tokens }}</td>
+                                <td><small class="text-danger">{{ req.error[:30] if req.error else '' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
