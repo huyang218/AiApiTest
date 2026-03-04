@@ -434,3 +434,220 @@ def get_all_test_questions():
     for q in CAPABILITY_QUESTIONS:
         all_questions.append({**q, 'type': 'capability'})
     return all_questions
+
+
+# ============== Tools 调用检测 ==============
+
+TOOLS_TEST_CASES = [
+    {
+        'id': 'weather_tool',
+        'category': 'Tools调用',
+        'description': '天气查询 - 单工具调用',
+        'tools': [{
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "获取指定城市的当前天气信息",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "city": {"type": "string", "description": "城市名称，如'北京'、'上海'"},
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"], "description": "温度单位"}
+                    },
+                    "required": ["city"]
+                }
+            }
+        }],
+        'message': '北京今天天气怎么样？',
+        'expected_tool': 'get_weather',
+        'expected_args': ['city'],
+    },
+    {
+        'id': 'calc_tool',
+        'category': 'Tools调用',
+        'description': '数学计算 - 参数提取',
+        'tools': [{
+            "type": "function",
+            "function": {
+                "name": "calculate",
+                "description": "执行数学计算，返回计算结果",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "expression": {"type": "string", "description": "需要计算的数学表达式，如 '(15*37+128)/4'"}
+                    },
+                    "required": ["expression"]
+                }
+            }
+        }],
+        'message': '帮我计算 (15 * 37 + 128) / 4 的结果',
+        'expected_tool': 'calculate',
+        'expected_args': ['expression'],
+    },
+    {
+        'id': 'multi_tool',
+        'category': 'Tools调用',
+        'description': '多工具选择 - 正确路由',
+        'tools': [
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_web",
+                    "description": "在互联网上搜索信息",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string", "description": "搜索关键词"}
+                        },
+                        "required": ["query"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "send_email",
+                    "description": "发送电子邮件",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "to": {"type": "string", "description": "收件人邮箱"},
+                            "subject": {"type": "string", "description": "邮件主题"},
+                            "body": {"type": "string", "description": "邮件正文"}
+                        },
+                        "required": ["to", "subject", "body"]
+                    }
+                }
+            }
+        ],
+        'message': '帮我搜索一下2024年最新的AI技术发展趋势',
+        'expected_tool': 'search_web',
+        'expected_args': ['query'],
+    },
+    {
+        'id': 'no_tool',
+        'category': 'Tools调用',
+        'description': '不需工具 - 抑制误调用',
+        'tools': [{
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "获取指定城市的当前天气信息",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "city": {"type": "string", "description": "城市名称"}
+                    },
+                    "required": ["city"]
+                }
+            }
+        }],
+        'message': '你好，请用一句话介绍一下量子计算的基本原理。',
+        'expected_tool': None,
+        'expected_args': [],
+    }
+]
+
+
+def get_tools_test_cases():
+    """获取 Tools 调用测试用例"""
+    return TOOLS_TEST_CASES
+
+
+def analyze_tool_call_result(test_case, tool_calls, response_content):
+    """
+    分析单个 Tools 调用结果，返回评分和详情
+    tool_calls: [{'name': str, 'arguments': dict}, ...]  或 None/空列表
+    response_content: 模型返回的文本内容（可能为空）
+    返回: { score: 0-100, passed: bool, detail: str, tool_called: str|None, args: dict|None }
+    """
+    import json as _json
+
+    expected_tool = test_case.get('expected_tool')
+    expected_args = test_case.get('expected_args', [])
+
+    # 情况1: 期望不调用工具
+    if expected_tool is None:
+        if not tool_calls:
+            return {
+                'score': 100,
+                'passed': True,
+                'detail': '✅ 正确：未调用工具，直接回答了问题',
+                'tool_called': None,
+                'args': None
+            }
+        else:
+            called = tool_calls[0].get('name', '?')
+            return {
+                'score': 20,
+                'passed': False,
+                'detail': f'⚠️ 误调用：不需要工具但调用了 {called}',
+                'tool_called': called,
+                'args': tool_calls[0].get('arguments')
+            }
+
+    # 情况2: 期望调用工具
+    if not tool_calls:
+        # 没有调用任何工具
+        if response_content and len(response_content) > 20:
+            return {
+                'score': 10,
+                'passed': False,
+                'detail': '❌ 未调用工具，直接用文本回答（可能不支持 Tools）',
+                'tool_called': None,
+                'args': None
+            }
+        return {
+            'score': 0,
+            'passed': False,
+            'detail': '❌ 未调用工具，也无有效回答',
+            'tool_called': None,
+            'args': None
+        }
+
+    # 检查是否调用了正确的工具
+    first_call = tool_calls[0]
+    called_name = first_call.get('name', '')
+    called_args = first_call.get('arguments', {})
+
+    # 如果 arguments 是字符串，尝试解析
+    if isinstance(called_args, str):
+        try:
+            called_args = _json.loads(called_args)
+        except:
+            called_args = {}
+
+    if called_name != expected_tool:
+        return {
+            'score': 30,
+            'passed': False,
+            'detail': f'⚠️ 调用了错误的工具: {called_name}（期望: {expected_tool}）',
+            'tool_called': called_name,
+            'args': called_args
+        }
+
+    # 工具名正确，检查参数
+    score = 60  # 基础分：工具名正确
+    missing_args = [arg for arg in expected_args if arg not in called_args]
+
+    if not missing_args:
+        # 所有必需参数都有
+        # 检查参数值是否合理（非空）
+        empty_args = [arg for arg in expected_args if not called_args.get(arg)]
+        if not empty_args:
+            score = 100
+            detail = f'✅ 正确调用 {called_name}，参数完整'
+        else:
+            score = 80
+            detail = f'⚠️ 调用了 {called_name}，但参数 {empty_args} 值为空'
+    else:
+        score = 60
+        detail = f'⚠️ 调用了 {called_name}，但缺少参数: {missing_args}'
+
+    return {
+        'score': score,
+        'passed': score >= 80,
+        'detail': detail,
+        'tool_called': called_name,
+        'args': called_args
+    }

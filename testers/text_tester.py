@@ -311,6 +311,124 @@ class ApiTester:
         )
         return response.json()
     
+    def _build_tools_payload(self, messages: list, tools: list, max_tokens: int = 1024) -> dict:
+        """构建带 tools 的请求体，兼容各 API 格式"""
+        if self.config.api_format == ApiFormat.ANTHROPIC:
+            # Anthropic 格式: tools 用 input_schema 替代 parameters
+            anthropic_tools = []
+            for t in tools:
+                func = t.get("function", {})
+                anthropic_tools.append({
+                    "name": func.get("name", ""),
+                    "description": func.get("description", ""),
+                    "input_schema": func.get("parameters", {})
+                })
+            return {
+                "model": self.config.model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "tools": anthropic_tools
+            }
+        elif self.config.api_format == ApiFormat.GEMINI:
+            # Gemini 格式: functionDeclarations
+            contents = []
+            for msg in messages:
+                role = "user" if msg["role"] == "user" else "model"
+                contents.append({
+                    "role": role,
+                    "parts": [{"text": msg["content"]}]
+                })
+            func_declarations = []
+            for t in tools:
+                func = t.get("function", {})
+                func_declarations.append({
+                    "name": func.get("name", ""),
+                    "description": func.get("description", ""),
+                    "parameters": func.get("parameters", {})
+                })
+            return {
+                "contents": contents,
+                "tools": [{"functionDeclarations": func_declarations}],
+                "generationConfig": {
+                    "maxOutputTokens": max_tokens
+                }
+            }
+        else:
+            # OpenAI 及兼容格式 (含国产模型)
+            return {
+                "model": self.config.model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "tools": tools
+            }
+    
+    def _parse_tool_calls(self, data: dict) -> tuple:
+        """
+        解析 tool_call 响应，返回 (tool_calls_list, text_content, error)
+        tool_calls_list: [{'name': str, 'arguments': dict/str}, ...]
+        """
+        try:
+            if self.config.api_format == ApiFormat.ANTHROPIC:
+                # Anthropic: content 数组中 type="tool_use" 的项
+                content_blocks = data.get("content", [])
+                tool_calls = []
+                text_content = ""
+                for block in content_blocks:
+                    if block.get("type") == "tool_use":
+                        tool_calls.append({
+                            "name": block.get("name", ""),
+                            "arguments": block.get("input", {})
+                        })
+                    elif block.get("type") == "text":
+                        text_content += block.get("text", "")
+                return tool_calls, text_content, None
+                
+            elif self.config.api_format == ApiFormat.GEMINI:
+                # Gemini: candidates[0].content.parts 中的 functionCall
+                candidates = data.get("candidates", [])
+                tool_calls = []
+                text_content = ""
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    for part in parts:
+                        if "functionCall" in part:
+                            fc = part["functionCall"]
+                            tool_calls.append({
+                                "name": fc.get("name", ""),
+                                "arguments": fc.get("args", {})
+                            })
+                        elif "text" in part:
+                            text_content += part.get("text", "")
+                return tool_calls, text_content, None
+                
+            else:
+                # OpenAI 兼容格式
+                choices = data.get("choices", [{}])
+                message = choices[0].get("message", {}) if choices else {}
+                text_content = message.get("content", "") or ""
+                raw_tool_calls = message.get("tool_calls", [])
+                tool_calls = []
+                for tc in raw_tool_calls:
+                    func = tc.get("function", {})
+                    tool_calls.append({
+                        "name": func.get("name", ""),
+                        "arguments": func.get("arguments", "{}")
+                    })
+                return tool_calls, text_content, None
+                
+        except Exception as e:
+            return [], "", str(e)
+    
+    def call_api_with_tools(self, messages: list, tools: list, max_tokens: int = 1024) -> dict:
+        """同步调用带 tools 的 API"""
+        response = requests.post(
+            self._get_endpoint(),
+            headers=self._get_headers(),
+            json=self._build_tools_payload(messages, tools, max_tokens),
+            timeout=120
+        )
+        return response.json()
+    
     async def call_api_async(
         self, 
         session: aiohttp.ClientSession,

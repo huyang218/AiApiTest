@@ -10,7 +10,8 @@ from core.settings_manager import load_settings, get_official_config
 from core.utils import (
     get_config_from_request, calculate_similarity, is_valid_response,
     get_all_test_questions, get_api_format_enum,
-    get_honesty_test_questions, analyze_honesty_response, check_consistency
+    get_honesty_test_questions, analyze_honesty_response, check_consistency,
+    get_tools_test_cases, analyze_tool_call_result
 )
 from routes.auth import login_required
 from routes.records import save_report
@@ -744,6 +745,152 @@ def run_deep_analyze():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ============== Tools 调用能力检测 ==============
+
+@test_text_bp.route('/api/test/tools/stream', methods=['POST'])
+@login_required
+def run_tools_stream():
+    """流式 Tools 调用检测 - 检测 API 是否正确支持 Function Calling"""
+    data = request.json
+    config, _, _, error = get_config_from_request(data)
+    
+    if error:
+        return jsonify({'error': error}), 400
+    
+    def generate():
+        try:
+            test_cases = get_tools_test_cases()
+            yield f"data: {json.dumps({'event': 'start', 'total': len(test_cases)})}\n\n"
+            
+            test_tester = ApiTester(config)
+            results = []
+            total_score = 0
+            passed_count = 0
+            supported = True  # 是否支持 tools
+            
+            for i, tc in enumerate(test_cases):
+                # 进度通知
+                progress_msg = {
+                    'event': 'progress',
+                    'index': i,
+                    'description': tc['description'],
+                    'message': f"正在测试: {tc['description']} ({i+1}/{len(test_cases)})"
+                }
+                yield f"data: {json.dumps(progress_msg)}\n\n"
+                
+                # 调用带 tools 的 API
+                tool_calls = []
+                text_content = ""
+                error_msg = None
+                
+                try:
+                    resp = test_tester.call_api_with_tools(
+                        [{"role": "user", "content": tc['message']}],
+                        tc['tools'],
+                        max_tokens=500
+                    )
+                    
+                    # 检查是否有 API 级别的错误
+                    if 'error' in resp:
+                        err = resp['error']
+                        if isinstance(err, dict):
+                            error_msg = err.get('message', str(err))
+                        else:
+                            error_msg = str(err)
+                        # 判断是否是不支持 tools 的错误
+                        err_lower = error_msg.lower()
+                        if any(kw in err_lower for kw in ['tool', 'function', 'not supported', 'unsupported', 'invalid']):
+                            supported = False
+                    else:
+                        tool_calls, text_content, parse_err = test_tester._parse_tool_calls(resp)
+                        if parse_err:
+                            error_msg = f"解析错误: {parse_err}"
+                except Exception as e:
+                    error_msg = str(e)[:200]
+                
+                # 分析结果
+                if error_msg and not tool_calls:
+                    analysis = {
+                        'score': 0,
+                        'passed': False,
+                        'detail': f'❌ 调用失败: {error_msg[:100]}',
+                        'tool_called': None,
+                        'args': None
+                    }
+                else:
+                    analysis = analyze_tool_call_result(tc, tool_calls, text_content)
+                
+                total_score += analysis['score']
+                if analysis['passed']:
+                    passed_count += 1
+                
+                # 序列化 args
+                args_display = None
+                if analysis.get('args'):
+                    try:
+                        args_display = json.dumps(analysis['args'], ensure_ascii=False)
+                    except:
+                        args_display = str(analysis['args'])
+                
+                question_result = {
+                    'event': 'question',
+                    'index': i,
+                    'id': tc['id'],
+                    'description': tc['description'],
+                    'message': tc['message'],
+                    'expected_tool': tc['expected_tool'],
+                    'tool_called': analysis.get('tool_called'),
+                    'args': args_display,
+                    'text_content': (text_content[:200] + '...') if text_content and len(text_content) > 200 else text_content,
+                    'score': analysis['score'],
+                    'passed': analysis['passed'],
+                    'detail': analysis['detail'],
+                    'error': error_msg
+                }
+                results.append(question_result)
+                yield f"data: {json.dumps(question_result)}\n\n"
+            
+            # 综合结果
+            avg_score = total_score / len(test_cases) if test_cases else 0
+            
+            if not supported:
+                level = '不支持'
+                level_class = 'secondary'
+            elif avg_score >= 80:
+                level = '优秀'
+                level_class = 'success'
+            elif avg_score >= 50:
+                level = '一般'
+                level_class = 'warning'
+            else:
+                level = '较弱'
+                level_class = 'danger'
+            
+            final_result = {
+                'event': 'complete',
+                'avg_score': round(avg_score, 1),
+                'passed_count': passed_count,
+                'total': len(test_cases),
+                'level': level,
+                'level_class': level_class,
+                'supported': supported,
+                'results': results
+            }
+            yield f"data: {json.dumps(final_result)}\n\n"
+            
+        except Exception as e:
+            yield f"data: {json.dumps({'event': 'error', 'message': str(e)})}\n\n"
+    
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no'
+        }
+    )
 
 
 # ============== 提示词诚实性检测 ==============

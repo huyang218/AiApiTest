@@ -401,6 +401,56 @@
                     </div>
                 </div>
 
+                <!-- Tools 调用检测 -->
+                <div class="card test-module mt-3" id="toolsModule">
+                    <div class="card-header">
+                        <i class="bi bi-tools"></i> Tools 调用检测
+                        <span class="badge bg-info" style="font-size: 0.55rem;">NEW</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-secondary small mb-2">检测 API 是否正确支持 Function Calling，套壳模型通常 Tools 调用能力较弱</p>
+                        <div class="row g-1 mb-2">
+                            <div class="col-3">
+                                <span class="badge bg-light text-dark w-100" style="font-size:0.65rem;">🌤️单工具</span>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-light text-dark w-100" style="font-size:0.65rem;">📝参数提取</span>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-light text-dark w-100" style="font-size:0.65rem;">🔀多工具</span>
+                            </div>
+                            <div class="col-3">
+                                <span class="badge bg-light text-dark w-100" style="font-size:0.65rem;">🚫抑制误调</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary w-100 btn-sm" onclick="runToolsTest()" id="toolsBtn">
+                            <i class="bi bi-play-fill"></i> 开始检测
+                        </button>
+                        <div id="toolsResult" style="display:none;" class="mt-2">
+                            <!-- 综合结果 -->
+                            <div class="d-flex align-items-center gap-2 p-2 rounded mb-2" style="background:var(--bg-input);">
+                                <div class="score-badge" id="toolsScoreBadge" style="width:40px;height:40px;font-size:0.9rem;">-</div>
+                                <div>
+                                    <div class="fw-bold small" id="toolsLevelLabel">检测中...</div>
+                                    <small class="text-secondary" id="toolsSummary"></small>
+                                </div>
+                            </div>
+                            <!-- 进度条 -->
+                            <div id="toolsProgress" class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small text-secondary" id="toolsStatusText">准备中...</span>
+                                    <span class="small text-primary" id="toolsProgressText">0/4</span>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-primary" id="toolsProgressBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <!-- 测试结果卡片 -->
+                            <div id="toolsTestCards" class="row g-1"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card test-module mt-3" id="multimodalModule">
                     <div class="card-header">
                         <i class="bi bi-images"></i> 多模态视觉版本检测
@@ -2364,6 +2414,125 @@
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-play-fill"></i> 开始版本检测';
+        }
+    }
+
+    // ============== Tools 调用检测 ==============
+    async function runToolsTest() {
+        const config = getFormConfig();
+        if (!config) return;
+
+        const btn = document.getElementById('toolsBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 检测中...';
+        addLog('[Tools检测] 开始检测 Tools/Function Calling 能力...', 'info');
+
+        const resultPanel = document.getElementById('toolsResult');
+        resultPanel.style.display = 'block';
+        document.getElementById('toolsTestCards').innerHTML = '';
+        document.getElementById('toolsScoreBadge').textContent = '-';
+        document.getElementById('toolsScoreBadge').className = 'score-badge';
+        document.getElementById('toolsLevelLabel').textContent = '检测中...';
+        document.getElementById('toolsSummary').textContent = '';
+
+        try {
+            const response = await fetch('/api/test/tools/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let totalTests = 4;
+            let completed = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    try {
+                        const data = JSON.parse(line.substring(6));
+
+                        if (data.event === 'start') {
+                            totalTests = data.total;
+                            document.getElementById('toolsProgressText').textContent = `0/${totalTests}`;
+                        }
+                        else if (data.event === 'progress') {
+                            document.getElementById('toolsStatusText').textContent = data.message;
+                        }
+                        else if (data.event === 'question') {
+                            completed++;
+                            const pct = (completed / totalTests * 100).toFixed(0);
+                            document.getElementById('toolsProgressBar').style.width = pct + '%';
+                            document.getElementById('toolsProgressText').textContent = `${completed}/${totalTests}`;
+
+                            const passed = data.passed;
+                            const scoreClass = data.score >= 80 ? 'bg-success' : data.score >= 50 ? 'bg-warning' : 'bg-danger';
+                            const expectedStr = data.expected_tool ? data.expected_tool : '不调用';
+                            const calledStr = data.tool_called ? data.tool_called : '未调用';
+
+                            let detailHtml = `<div class="text-secondary" style="font-size:0.65rem;">${escapeHtml(data.detail)}</div>`;
+                            if (data.tool_called && data.args) {
+                                detailHtml += `<div class="text-muted" style="font-size:0.6rem;margin-top:2px;">参数: ${escapeHtml(data.args)}</div>`;
+                            }
+                            if (data.text_content && !data.tool_called) {
+                                detailHtml += `<div class="text-muted" style="font-size:0.6rem;margin-top:2px;">回复: ${escapeHtml(data.text_content.substring(0, 80))}...</div>`;
+                            }
+
+                            const cardHtml = `<div class="col-6">
+                                <div class="border rounded p-2" style="background:var(--bg-input);font-size:0.75rem;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-bold">${escapeHtml(data.description)}</span>
+                                        <span class="badge ${scoreClass}" style="font-size:0.6rem;">${data.score}</span>
+                                    </div>
+                                    <div style="font-size:0.65rem;" class="mb-1">
+                                        <span class="text-secondary">期望:</span> ${escapeHtml(expectedStr)}
+                                        <span class="mx-1">→</span>
+                                        <span class="${passed ? 'text-success' : 'text-danger'} fw-bold">${escapeHtml(calledStr)}</span>
+                                    </div>
+                                    ${detailHtml}
+                                </div>
+                            </div>`;
+                            document.getElementById('toolsTestCards').innerHTML += cardHtml;
+
+                            addLog(`[Tools检测] ${data.description}: ${data.detail}`, passed ? 'success' : 'warning');
+                        }
+                        else if (data.event === 'complete') {
+                            const scoreBadge = document.getElementById('toolsScoreBadge');
+                            scoreBadge.textContent = Math.round(data.avg_score);
+                            scoreBadge.className = 'score-badge ' + (data.avg_score >= 80 ? 'score-high' : data.avg_score >= 50 ? 'score-medium' : 'score-low');
+
+                            const levelLabel = document.getElementById('toolsLevelLabel');
+                            const levelColors = { 'success': 'text-success', 'warning': 'text-warning', 'danger': 'text-danger', 'secondary': 'text-secondary' };
+                            const levelIcons = { '优秀': '✓', '一般': '⚠', '较弱': '✗', '不支持': '✗' };
+                            levelLabel.innerHTML = `<span class="${levelColors[data.level_class] || 'text-secondary'}">${levelIcons[data.level] || ''} Tools能力: ${data.level}</span>`;
+
+                            document.getElementById('toolsSummary').textContent = `通过 ${data.passed_count}/${data.total} 项测试，平均得分 ${data.avg_score}`;
+
+                            // 隐藏进度条
+                            document.getElementById('toolsProgress').style.display = 'none';
+
+                            addLog(`[Tools检测] 完成! 能力评级: ${data.level}，平均得分: ${data.avg_score}`, data.level_class === 'success' ? 'success' : 'warning');
+                        }
+                        else if (data.event === 'error') {
+                            addLog('[Tools检测] 错误: ' + data.message, 'error');
+                        }
+                    } catch (e) { /* ignore parse errors */ }
+                }
+            }
+        } catch (e) {
+            addLog('[Tools检测] 请求失败: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-fill"></i> 开始检测';
         }
     }
 
